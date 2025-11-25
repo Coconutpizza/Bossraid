@@ -585,7 +585,10 @@ class BossEntity extends Entity {
         let msg = "";
         switch(this.stage) {
             case 2: msg = "STAGE 2: dynasty"; this.summonStage2Units(); break;
-            case 3: msg = "STAGE 3: Pizza Salvatore"; spawnEntity('titan', this.mesh.position); spawnEntity('titan', this.mesh.position); document.getElementById('ab-4').style.display = 'flex'; break;
+                this.attackCataclysm(); 
+            case 3: msg = "STAGE 3: Pizza Salvatore"; 
+                this.attackCataclysm(); 
+                spawnEntity('titan', this.mesh.position); spawnEntity('titan', this.mesh.position); document.getElementById('ab-4').style.display = 'flex'; break;
             case 4: msg = "STAGE 4: Fart attack";
                 this.attackMeteorRain();
                 this.attackCataclysm();
@@ -702,12 +705,12 @@ class BossEntity extends Entity {
         showBanner('wrath-banner', 4000, "Crashout");
         this.setAnim('spin');
         this.attackMeteorRain(true); 
-        setTimeout(() => this.attackMultiBeam(), 2000);
-        setTimeout(() => this.attackSpikes(), 3000);
-        setTimeout(() => this.activateMoroccoRage(), 5000);
-        setTimeout(() => this.fireVoidCannon(), 6000);
-        setTimeout(() => this.attackMultiBeam(), 7000);
-        setTimeout(() => this.attackVoidBomb(), 8000);
+        this.fireVoidCannon()	
+        this.attackSpikes()	
+        this.attackMultiBeam()	
+        this.triggerLament()	
+        this.attackVoidBomb()	
+        this.summonStage2Units()	
         
         
     }
