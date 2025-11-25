@@ -481,11 +481,13 @@ class BossEntity extends Entity {
             case 4: msg = "STAGE 4: Fart attack"; this.attackMeteorRain(); break;
             case 5: 
                 msg = "STAGE 5: The Sultan make the rules"; 
-                this.hp += this.maxHp * 0.40; 
-                this.shield += this.maxHp * 0.20; 
+                this.hp += this.maxHp * 1.00; 
+                this.shield += this.maxHp * 0.80; 
                 this.attackCataclysm(); 
                 this.attackMeteorRain(true); 
                 this.summonStage2Units(); 
+                this.attackCataclysm(); 
+                this.attackCataclysm(); 
                 break;
         }
         showBanner('stage-banner', 4000, msg);
