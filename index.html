@@ -1,25 +1,21 @@
+<!-- START OF FILE fight.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Lord Sultan</title>
+    <title>Lord Sultan - The Void King (Clear Skies)</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #050505; font-family: 'Courier New', Courier, monospace; user-select: none; }
-        
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', Courier, monospace; user-select: none; }
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; z-index: 5;}
-        
-        /* BOSS UI */
         #boss-hud { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 600px; text-align: center; }
         #boss-name { color: #d4af37; font-size: 32px; font-weight: 900; text-transform: uppercase; text-shadow: 0 0 15px #d4af37; margin-bottom: 5px; letter-spacing: 2px; }
         #boss-hp-bg { width: 100%; height: 30px; background: #111; border: 4px solid #d4af37; position: relative; box-shadow: 0 0 20px black; transform: skewX(-20deg); }
         #boss-hp-fill { height: 100%; background: linear-gradient(90deg, #800, #f00); width: 100%; transition: width 0.1s; }
-        #boss-shield-fill { height: 100%; background: #fff; width: 0%; position: absolute; top:0; left:0; opacity: 0.6; mix-blend-mode: overlay; }
+        #boss-shield-fill { height: 100%; background: #fff; width: 0%; position: absolute; top:0; left:0; opacity: 0.6; mix-blend-mode: overlay; transition: width 0.1s; }
         #boss-wrath-bg { width: 100%; height: 8px; background: #222; margin-top: 5px; border: 1px solid #555; position: relative; }
         #boss-wrath-fill { height: 100%; background: #b0f; width: 0%; transition: width 0.2s; box-shadow: 0 0 10px #b0f; }
         #boss-stage { margin-top: 5px; color: #ff0000; font-weight: bold; font-size: 24px; text-shadow: 0 0 10px red; }
         #wrath-status { font-size: 16px; color: #aaa; margin-top: 2px; font-weight: bold; }
-
-        /* PLAYER STATS */
         .player-stats { position: absolute; bottom: 20px; left: 20px; width: 350px; }
         .bar-wrap { margin-bottom: 10px; }
         .bar-label { color: #fff; font-size: 16px; font-weight: bold; text-shadow: 1px 1px 0 #000; }
@@ -29,37 +25,30 @@
         #p-shield-fill { background: #00f; width: 0%; position: absolute; top: 0; left: 0; opacity: 0.7; }
         #ammo-counter { color: #0ff; font-weight: bold; font-size: 24px; display: none; text-shadow: 0 0 5px #0ff; margin-top: 5px;}
         #mech-indicator { color: #00ffff; font-weight: bold; font-size: 20px; text-shadow: 0 0 10px #00ffff; display: none; margin-top: 5px; }
-
-        /* ABILITIES */
         #ability-panel { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 15px; }
         .ability-box { width: 70px; height: 70px; background: rgba(0,0,0,0.8); border: 2px solid #777; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; transition: all 0.2s; }
         .ability-box.ready { border-color: #ffd700; color: #ffd700; box-shadow: 0 0 15px #ffd700; transform: scale(1.05); }
         .ability-box.ascend { border-color: #ffffff; color: #ffffff; box-shadow: 0 0 30px #ffffff; animation: pulse 0.5s infinite; display: none; }
         .cooldown-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); height: 0%; transition: height 0.1s; }
         .key-bind { position: absolute; top: 2px; left: 5px; font-size: 12px; color: #ccc; font-weight: bold; }
-
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-
-        /* BANNERS */
         #crosshair { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; background: rgba(255, 255, 255, 0.9); border: 2px solid #000; border-radius: 50%; transform: translate(-50%, -50%); }
         .banner { position: absolute; width: 100%; text-align: center; opacity: 0; transform: scale(0.5); transition: all 0.2s ease; pointer-events: none; text-shadow: 2px 2px 0 #000; z-index: 5; font-weight: 900; }
         .banner.active { opacity: 1; transform: scale(1); }
-        
         #lament-banner { top: 20%; font-size: 60px; color: #800080; text-shadow: 0 0 20px #ff00ff; }
         #wrath-banner { top: 35%; font-size: 40px; color: #ff6600; }
         #stage-banner { top: 40%; font-size: 70px; color: #ff0000; text-shadow: 0 0 30px red; text-transform: uppercase; }
-
         #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 10, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; pointer-events: auto; z-index: 20; }
         h1 { color: #d4af37; text-transform: uppercase; font-size: 50px; margin-bottom: 10px;}
         p { font-size: 18px; color: #ddd; max-width: 700px; text-align: center; margin: 5px 0; }
         .key { color: #d4af37; border: 1px solid #d4af37; padding: 2px 6px; border-radius: 4px; }
         button { margin-top: 30px; padding: 20px 50px; font-size: 24px; background: #d4af37; border: none; cursor: pointer; color: #000; font-weight: bold; transition: transform 0.2s; }
         button:hover { transform: scale(1.1); background: #fff; }
-        
         #mech-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 5px solid cyan; box-shadow: inset 0 0 50px cyan; pointer-events: none; display: none; z-index: 2; }
         #white-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 2s; }
         #cinematic-bars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; flex-direction: column; justify-content: space-between; z-index: 15; }
-        .c-bar { width: 100%; height: 10%; background: black; }
+        .c-bar { width: 100%; height: 12%; background: black; }
+        #boss-shield-msg { position: absolute; top: 60px; width: 100%; text-align: center; color: cyan; font-weight: bold; font-size: 20px; display: none; text-shadow: 0 0 10px cyan; }
     </style>
 </head>
 <body>
@@ -77,6 +66,7 @@
         </div>
         <div id="boss-wrath-bg"><div id="boss-wrath-fill"></div></div>
         <div id="wrath-status">WRATH ACCUMULATING</div>
+        <div id="boss-shield-msg">SHIELDED: DESTROY SUMMONS</div>
         <div id="boss-stage">STAGE 1: I need a piece</div>
     </div>
 
@@ -89,7 +79,7 @@
             </div>
         </div>
         <div id="ammo-counter">RIFLE: <span id="ammo-val">--</span></div>
-        <div id="mech-indicator">SHIELDED, RIFLE DISABLED, MELEE ONLY</div>
+        <div id="mech-indicator">RAILGUN ARMED</div>
         <div id="buff-text" style="display:none; color: #ffd700; font-weight: bold; font-size: 20px; text-shadow: 0 0 10px yellow;">Sultan sacrifice</div>
     </div>
 
@@ -114,32 +104,42 @@
     <h1>can i have a piece</h1>
     <p>Can i have a sip</p>
     <br>
+    <p><span class="key">W</span> Front <span class="key">S</span> Back <span class="key">A</span> Left <span class="key">D</span> Right</p>
     <p><span class="key">1</span> Shield | <span class="key">2</span> Rifle | <span class="key">Shift</span> Leap</p>
     <p><span class="key">3</span> summon (<strong>Instant Deployment</strong>)</p>
     <p><span class="key">F</span> <strong>Sultan sacrifice</strong> (Sacrifice Army)</p>
-    <p><span class="key">E</span> <strong>Big Shield</strong> | <span class="key">4</span> <strong>𝓓𝓲𝓭𝓭𝔂 𝓽𝓲𝓶𝓮👅</strong> (Stage 3)</p>
+    <p><span class="key">E</span> <strong>Railgun</strong> | <span class="key">4</span> <strong>𝓓𝓲𝓭𝓭𝔂 𝓽𝓲𝓶𝓮👅</strong> (Stage 3)</p>
     <button id="start-btn">Give him a sip and a piece</button>
 </div>
 
 <script type="importmap">
-  { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+  { "imports": { 
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    } }
 </script>
 
 <script type="module">
 import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
+// Buffed Stats
 const CONFIG = {
-    BOSS_MAX_HP: 50000, 
-    PLAYER_MAX_HP: 100,
-    PLAYER_SPEED: 10.0, 
-    BOSS_SPEED: 10.0, 
-    BOSS_DMG: 35, 
-    RIFLE_DMG: 75, RIFLE_RATE: 100, 
-    DIRECT_HIT_DMG: 2500, DIRECT_HIT_CD: 1000,
-    TWIN_HP: 200, VOID_TWIN_HP: 600, ELITE_HP: 500, TITAN_HP: 2000, FOOTMAN_HP: 320, ALLY_HP: 400, GUARDIAN_HP: 1200,
-    THROW_CD: 300, MECH_CD: 40000, MECH_DURATION: 10000,
-    LAMENT_DMG: 45, MECH_BLADE_DMG: 80, MECH_BLADE_RATE: 500, MECH_SHIELD: 300,
-    VOID_CANNON_DMG: 90
+    BOSS_MAX_HP: 60000, 
+    PLAYER_MAX_HP: 200,
+    PLAYER_SPEED: 12.0, // Slight speed buff for better control feel
+    BOSS_SPEED: 14.0, 
+    BOSS_DMG: 65, 
+    RIFLE_DMG: 85, RIFLE_RATE: 130, 
+    DIRECT_HIT_DMG: 3000, DIRECT_HIT_CD: 1000,
+    // Minion Stats
+    TWIN_HP: 650, VOID_TWIN_HP: 1000, ELITE_HP: 1700, TITAN_HP: 4500, FOOTMAN_HP: 650, 
+    ALLY_HP: 400, GUARDIAN_HP: 1200,
+    THROW_CD: 300, MECH_CD: 20000, MECH_DURATION: 12000,
+    LAMENT_DMG: 45, RAILGUN_DMG: 1500, RAILGUN_CD: 800, MECH_SHIELD: 550,
+    VOID_CANNON_DMG: 120
 };
 
 const GEOS = {
@@ -148,38 +148,45 @@ const GEOS = {
     cyl: new THREE.CylinderGeometry(1, 1, 1, 8),
     capsule: new THREE.CapsuleGeometry(0.15, 0.4, 4, 8),
     beam: new THREE.CylinderGeometry(1, 1, 1, 6),
-    sword: new THREE.BoxGeometry(0.3, 4, 0.1),
     plate: new THREE.BoxGeometry(1.2, 1.2, 0.2),
     torus: new THREE.TorusGeometry(1, 0.2, 8, 20)
 };
 
 const MATS = {
     white: new THREE.MeshBasicMaterial({color: 0xffffff}),
-    bossFur: new THREE.MeshStandardMaterial({color: 0x4a3b2a}),
-    bossSkin: new THREE.MeshStandardMaterial({color: 0xe0d5c1}),
-    twinFur: new THREE.MeshStandardMaterial({color: 0x222222}),
-    voidTwin: new THREE.MeshStandardMaterial({color: 0x800080, emissive: 0x200020}),
-    elite: new THREE.MeshStandardMaterial({color: 0xff0000}),
-    titan: new THREE.MeshStandardMaterial({color: 0x880000}),
-    footman: new THREE.MeshStandardMaterial({color: 0x660000}),
-    guardian: new THREE.MeshStandardMaterial({color: 0x0088ff}),
-    soldier: new THREE.MeshStandardMaterial({color: 0x88ccff}),
-    armorGold: new THREE.MeshStandardMaterial({color: 0xffd700, metalness: 0.8, roughness: 0.2}),
-    projPlayer: new THREE.MeshBasicMaterial({color: 0x00ffff}),
-    projDate: new THREE.MeshBasicMaterial({color: 0xffd700}),
-    projEnemy: new THREE.MeshBasicMaterial({color: 0xff4444}),
-    projVoid: new THREE.MeshBasicMaterial({color: 0x800080}),
-    projMeteor: new THREE.MeshBasicMaterial({color: 0xff4400}),
+    bossFur: new THREE.MeshStandardMaterial({color: 0x4a3b2a, roughness: 0.8}),
+    bossSkin: new THREE.MeshStandardMaterial({color: 0xe0d5c1, roughness: 0.6}),
+    twinFur: new THREE.MeshStandardMaterial({color: 0x222222, roughness: 0.9}),
+    voidTwin: new THREE.MeshStandardMaterial({color: 0x800080, emissive: 0x500050, emissiveIntensity: 2}),
+    elite: new THREE.MeshStandardMaterial({color: 0xff0000, emissive: 0x660000, emissiveIntensity: 1.5}),
+    titan: new THREE.MeshStandardMaterial({color: 0x880000, emissive: 0x330000, emissiveIntensity: 2}),
+    footman: new THREE.MeshStandardMaterial({color: 0x660000, roughness: 0.7}),
+    guardian: new THREE.MeshStandardMaterial({color: 0x0088ff, emissive: 0x003388, emissiveIntensity: 2}),
+    soldier: new THREE.MeshStandardMaterial({color: 0x88ccff, roughness: 0.4}),
+    armorGold: new THREE.MeshStandardMaterial({color: 0xffd700, metalness: 0.8, roughness: 0.2, emissive: 0x443300, emissiveIntensity: 1}),
+    projPlayer: new THREE.MeshStandardMaterial({color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 5}),
+    projDate: new THREE.MeshStandardMaterial({color: 0xffd700, emissive: 0xffd700, emissiveIntensity: 5}),
+    projEnemy: new THREE.MeshStandardMaterial({color: 0xff4444, emissive: 0xff4444, emissiveIntensity: 5}),
+    projVoid: new THREE.MeshStandardMaterial({color: 0x800080, emissive: 0xaa00aa, emissiveIntensity: 6}),
+    projMeteor: new THREE.MeshStandardMaterial({color: 0xff4400, emissive: 0xff4400, emissiveIntensity: 8}),
     beamWarn: new THREE.MeshBasicMaterial({color: 0xff0000, transparent:true, opacity:0.3, side:THREE.DoubleSide}),
-    beamHit: new THREE.MeshBasicMaterial({color: 0x4b0082}),
-    summonBeam: new THREE.MeshBasicMaterial({color: 0xffffaa, transparent:true, opacity:0.5}),
-    spike: new THREE.MeshStandardMaterial({color: 0x440044, emissive: 0x220022})
+    beamHit: new THREE.MeshBasicMaterial({color: 0x4b0082, emissive: 0x8a2be2, emissiveIntensity: 4}),
+    summonBeam: new THREE.MeshBasicMaterial({color: 0xffffaa, transparent:true, opacity:0.5, emissive: 0xffff00, emissiveIntensity: 3}),
+    spike: new THREE.MeshStandardMaterial({color: 0x440044, emissive: 0x660066, emissiveIntensity: 3}),
+    rifleMat: new THREE.MeshStandardMaterial({color: 0x333333, metalness: 0.8, roughness: 0.2}),
+    railgunMat: new THREE.MeshStandardMaterial({color: 0x111111, metalness: 0.9, roughness: 0.1, emissive: 0x002222}),
+    railgunGlow: new THREE.MeshStandardMaterial({color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 5}),
+    railgunBeam: new THREE.MeshBasicMaterial({color: 0x88ffff, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending})
 };
 
-let scene, camera, renderer;
-let playerObj, playerMesh, mechSword;
+let scene, camera, renderer, composer;
+let playerObj, playerMesh, weaponModels = { rifle: null, railgun: null };
 let entities = []; 
 let projectilePool = [];
+const PROJECTILE_LIGHT_POOL_SIZE = 15;
+let projectileLightPool = [];
+let projectileLightIndex = 0;
+
 let gameActive = false;
 let cinematicMode = false;
 let cinematicTimer = 0;
@@ -199,33 +206,52 @@ let playerStats = {
     cooldowns: { '1': 0, '2': 0, '3': 0, 'e': 0, 'f': 0, 'shift': 0 }
 };
 
-const CD_MAX = { '1': 10000, '2': 15000, '3': 20000, 'e': 40000, 'f': 30000, 'shift': 5000 };
+const CD_MAX = { '1': 10000, '2': 15000, '3': 20000, 'e': 40000, 'f': 30000, 'shift': 4000 };
 let boss = null;
 let ascensionCinematic = 0;
 let interventionCinematic = 0;
+let particleSystem;
+let cameraShake = { time: 0, intensity: 0 };
+
+const reusableVector = new THREE.Vector3();
+const playerFwd = new THREE.Vector3();
+const playerRgt = new THREE.Vector3();
+const moveDir = new THREE.Vector3();
+const raycaster = new THREE.Raycaster();
+const cameraWorldPos = new THREE.Vector3();
+const cameraWorldDir = new THREE.Vector3();
 
 function init() {
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x100510); 
-    scene.fog = new THREE.FogExp2(0x100510, 0.008); 
+    // CLEAR BACKGROUND
+    scene.background = new THREE.Color(0x222222); 
+    scene.fog = null; // No Fog
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.BasicShadowMap;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
     document.body.appendChild(renderer.domElement);
 
-    const ambient = new THREE.AmbientLight(0xffffff, 1.0); 
-    scene.add(ambient);
-    const flashlight = new THREE.SpotLight(0xffffe0, 2.0);
-    flashlight.position.set(0, 5, 0);
-    flashlight.angle = Math.PI / 3; 
-    flashlight.penumbra = 0.5;
-    flashlight.distance = 150;
-    flashlight.castShadow = true;
-    camera.add(flashlight);
-    flashlight.target = camera; 
+    // INCREASED LIGHTING
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 2.0);
+    scene.add(hemisphereLight);
+    const sunlight = new THREE.DirectionalLight(0xffffff, 1.5);
+    sunlight.position.set(50, 100, 50);
+    sunlight.castShadow = true;
+    sunlight.shadow.mapSize.width = 2048; 
+    sunlight.shadow.mapSize.height = 2048;
+    sunlight.shadow.camera.near = 0.5;
+    sunlight.shadow.camera.far = 500;
+    scene.add(sunlight);
+    
+    const renderPass = new RenderPass(scene, camera);
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.8, 0.3, 0.85);
+    composer = new EffectComposer(renderer);
+    composer.addPass(renderPass);
+    composer.addPass(bloomPass);
 
     createEnvironment();
 
@@ -234,24 +260,27 @@ function init() {
     playerObj.add(camera);
     scene.add(playerObj);
 
+    createWeaponModels();
+
     playerMesh = createHumanoidMesh(MATS.soldier, false);
     playerMesh.visible = false;
     playerObj.add(playerMesh);
     playerMesh.position.y = -1.7;
 
-    const swordMat = new THREE.MeshStandardMaterial({color: 0x00ffff, emissive: 0x004444});
-    mechSword = new THREE.Mesh(GEOS.sword, swordMat);
-    mechSword.position.set(1.5, -0.5, -2.0); 
-    mechSword.rotation.x = Math.PI / 3;
-    mechSword.visible = false;
-    camera.add(mechSword);
-
     for(let i=0; i<150; i++) {
         const p = new THREE.Mesh(GEOS.sphere, MATS.projPlayer);
         p.visible = false;
         scene.add(p);
-        projectilePool.push({ mesh: p, active: false, velocity: new THREE.Vector3(), life: 0, type: '', isPlayer: false, warningMesh: null });
+        projectilePool.push({ mesh: p, light: null, active: false, velocity: new THREE.Vector3(), life: 0, type: '', isPlayer: false, warningMesh: null });
     }
+    
+    for(let i=0; i<PROJECTILE_LIGHT_POOL_SIZE; i++) {
+        const light = new THREE.PointLight(0xffffff, 0, 10);
+        scene.add(light);
+        projectileLightPool.push(light);
+    }
+    
+    particleSystem = new ParticleSystem(scene, 8000);
 
     document.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; handleAbilityInput(e.key.toLowerCase()); });
     document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
@@ -271,26 +300,73 @@ function init() {
         startGame(); 
     });
 
-    window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+    window.addEventListener('resize', () => { 
+        camera.aspect = window.innerWidth/window.innerHeight; 
+        camera.updateProjectionMatrix(); 
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+    });
     
     animate();
 }
 
+function createWeaponModels() {
+    // RIFLE
+    const rifle = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.15, 0.8), MATS.rifleMat);
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1, 8), MATS.rifleMat);
+    barrel.rotation.x = -Math.PI/2; barrel.position.z = -0.5;
+    const mag = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.2, 0.1), MATS.rifleMat);
+    mag.position.set(0, -0.1, 0.1);
+    rifle.add(body, barrel, mag);
+    rifle.position.set(0.3, -0.2, -0.5);
+    rifle.visible = false;
+    camera.add(rifle);
+    weaponModels.rifle = rifle;
+
+    // DETAILED RAILGUN
+    const railgun = new THREE.Group();
+    const rBody = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.8), MATS.railgunMat);
+    
+    // Glowing Rails
+    const railGeo = new THREE.BoxGeometry(0.05, 0.05, 1.4);
+    const rail1 = new THREE.Mesh(railGeo, MATS.railgunGlow);
+    const rail2 = new THREE.Mesh(railGeo, MATS.railgunGlow);
+    rail1.position.set(-0.15, 0.05, -0.6); 
+    rail2.position.set(0.15, 0.05, -0.6);
+
+    // Coils
+    const coilGeo = new THREE.TorusGeometry(0.15, 0.02, 8, 16);
+    const coil1 = new THREE.Mesh(coilGeo, MATS.railgunGlow); coil1.position.set(0, 0.05, -0.4);
+    const coil2 = new THREE.Mesh(coilGeo, MATS.railgunGlow); coil2.position.set(0, 0.05, -0.8);
+    const coil3 = new THREE.Mesh(coilGeo, MATS.railgunGlow); coil3.position.set(0, 0.05, -1.2);
+
+    // Scope
+    const scopeMount = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.1), MATS.railgunMat); scopeMount.position.set(0, 0.2, 0);
+    const scopeTube = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.4, 12), MATS.railgunMat); scopeTube.rotation.z = Math.PI/2; scopeTube.position.set(0, 0.25, 0);
+
+    railgun.add(rBody, rail1, rail2, coil1, coil2, coil3, scopeMount, scopeTube);
+    railgun.position.set(0.5, -0.3, -0.6);
+    railgun.visible = false;
+    camera.add(railgun);
+    weaponModels.railgun = railgun;
+}
+
 function createEnvironment() {
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({ color: 0x222, roughness: 0.8 }));
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8, metalness: 0.2 });
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
 
-    const pillarCount = 40;
-    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x111 });
-    const pillarInst = new THREE.InstancedMesh(GEOS.cyl, pillarMat, pillarCount);
+    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8, metalness: 0.2 });
+    const pillarInst = new THREE.InstancedMesh(GEOS.cyl, pillarMat, 60);
     const dummy = new THREE.Object3D();
-    for(let i=0; i<pillarCount; i++) {
+    for(let i=0; i<60; i++) {
         const a = Math.random() * Math.PI * 2;
-        const r = 50 + Math.random() * 150;
+        const r = 50 + Math.random() * 200;
         dummy.position.set(Math.cos(a)*r, 10, Math.sin(a)*r);
-        dummy.scale.set(3, 20, 3); 
+        dummy.scale.set(4, 30, 4); 
         dummy.updateMatrix();
         pillarInst.setMatrixAt(i, dummy.matrix);
     }
@@ -299,15 +375,75 @@ function createEnvironment() {
     scene.add(pillarInst);
 }
 
+class ParticleSystem {
+    constructor(scene, count) {
+        this.scene = scene;
+        this.count = count;
+        const geom = new THREE.BufferGeometry();
+        const pos = new Float32Array(count * 3);
+        geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        this.velocities = new Array(count).fill(null).map(() => new THREE.Vector3());
+        this.lives = new Float32Array(count);
+        this.poolIndex = 0;
+        
+        const mat = new THREE.PointsMaterial({
+            size: 0.5, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
+        });
+        geom.setAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
+        this.points = new THREE.Points(geom, mat);
+        scene.add(this.points);
+    }
+    emit(options) {
+        const { pos, vel, count, life, size, color, spread } = options;
+        const posAttr = this.points.geometry.attributes.position;
+        const colorAttr = this.points.geometry.attributes.color;
+        for (let i = 0; i < count; i++) {
+            const idx = (this.poolIndex + i) % this.count;
+            posAttr.setXYZ(idx, pos.x, pos.y, pos.z);
+            this.velocities[idx].set(
+                vel.x + (Math.random() - 0.5) * spread,
+                vel.y + (Math.random() - 0.5) * spread,
+                vel.z + (Math.random() - 0.5) * spread
+            );
+            this.lives[idx] = life + Math.random() * 0.5 - 0.25;
+            colorAttr.setXYZ(idx, color.r, color.g, color.b);
+        }
+        this.poolIndex = (this.poolIndex + count) % this.count;
+        posAttr.needsUpdate = colorAttr.needsUpdate = true;
+    }
+    update(dt) {
+        const posAttr = this.points.geometry.attributes.position;
+        for (let i = 0; i < this.count; i++) {
+            if (this.lives[i] > 0) {
+                this.lives[i] -= dt;
+                if (this.lives[i] <= 0) {
+                    posAttr.setY(i, -1000); 
+                } else {
+                    posAttr.setXYZ(
+                        i,
+                        posAttr.getX(i) + this.velocities[i].x * dt,
+                        posAttr.getY(i) + this.velocities[i].y * dt,
+                        posAttr.getZ(i) + this.velocities[i].z * dt
+                    );
+                    this.velocities[i].y -= 2.0 * dt; 
+                }
+            }
+        }
+        posAttr.needsUpdate = true;
+    }
+}
+function triggerScreenShake(intensity, duration) {
+    cameraShake.intensity = intensity;
+    cameraShake.time = duration;
+}
+
 class Entity {
     constructor(mesh, hp, maxHp, faction, name) {
         this.mesh = mesh;
         this.hp = hp; this.maxHp = maxHp; this.shield = 0;
         this.faction = faction; this.name = name;
         this.dead = false; this.stunTimer = 0;
-        this.bobOffset = Math.random() * 100;
         this.attackAnimTimer = 0;
-        this.leapTimer = 0; 
         scene.add(this.mesh);
         
         if(name !== 'Lord Sultan') {
@@ -320,24 +456,20 @@ class Entity {
             this.updateHealthBar();
         }
     }
-
     swingArm() { this.attackAnimTimer = 0.3; }
     kneel() { this.kneeling = true; }
-
     takeDamage(amt, isPlayerSource = false) {
+        if(this.dead) return;
         if(this.shield > 0) { if(this.shield >= amt) { this.shield -= amt; amt = 0; } else { amt -= this.shield; this.shield = 0; } }
         this.hp -= amt;
-        
-        this.mesh.children[0].material.emissive.setHex(0xff0000);
-        setTimeout(() => { if(!this.dead && this.mesh) this.mesh.children[0].material.emissive.setHex(0x000000); }, 50);
-
+        particleSystem.emit({ pos: this.mesh.position.clone().add(reusableVector.set(0,2,0)), vel: reusableVector.set(0,1,0), count: 3, life: 0.5, size: 0.5, color: new THREE.Color(0xff0000), spread: 5 });
         if(this.name !== 'Lord Sultan') this.updateHealthBar();
         if(this.hp <= 0) { 
+             particleSystem.emit({ pos: this.mesh.position.clone().add(reusableVector.set(0,2,0)), vel: reusableVector.set(0,2,0), count: 50, life: 1.5, size: 1.0, color: new THREE.Color(0x880000), spread: 10 });
             if(this.name === 'Lord Sultan') { triggerVictoryCinematic(); }
             else { this.dead = true; scene.remove(this.mesh); }
         }
     }
-
     updateHealthBar() {
         if(!this.hpCtx) return;
         const pct = Math.max(0, this.hp / this.maxHp);
@@ -356,28 +488,40 @@ class BossEntity extends Entity {
         this.stage = 1;
         this.retreatMode = false;
         this.retreatTimer = 0;
-        this.actionTimer = 6000; 
+        this.actionTimer = 5000; 
         this.wrath = 0;
         this.wrathTriggers = {}; 
         this.gloryMode = false;
         this.gloryTimer = 0;
-        this.wrathCooldown = 0; 
         this.target = null;
-        this.lastPos = new THREE.Vector3(); 
-        this.stuckTimer = 0;
-        this.lastAttackTime = performance.now(); 
+        this.animState = 'idle'; // idle, smash, spin, channel
+        this.animTimer = 0;
+        this.limbs = {
+            leftArm: mesh.getObjectByName('leftArm'),
+            rightArm: mesh.getObjectByName('rightArm')
+        };
         this.addArmor(); 
     }
 
     takeDamage(amt, isPlayerSource) {
         if(this.dead) return;
         
-        // Aggressive CD reduction
+        // Stage 5 Invincibility Check
+        if(this.stage === 5) {
+            const livingMinions = entities.filter(e => e.faction === 'enemy' && e !== this && !e.dead).length;
+            if(livingMinions > 0) {
+                document.getElementById('boss-shield-msg').style.display = 'block';
+                return; // 0 Damage
+            } else {
+                document.getElementById('boss-shield-msg').style.display = 'none';
+            }
+        }
+
         if(this.actionTimer > 500) this.actionTimer -= 300; 
         
-        let wGain = isPlayerSource ? 1.0 : 0.2;
+        let wGain = isPlayerSource ? 2.5 : 0.5;
         this.addWrath(wGain);
-
+        
         const finalDmg = this.retreatMode ? amt * 0.1 : amt;
         super.takeDamage(finalDmg, isPlayerSource);
         updateBossUI();
@@ -385,13 +529,11 @@ class BossEntity extends Entity {
     }
     
     addWrath(amount) {
-        if(this.wrathCooldown > 0) return; 
         this.wrath += amount;
         if(this.wrath >= 100) {
             this.wrath = 0; 
             this.attackCataclysm();
             this.wrathTriggers = {};
-            this.wrathCooldown = 3000; 
             updateBossUI();
         } else {
             this.checkWrathThresholds();
@@ -400,49 +542,25 @@ class BossEntity extends Entity {
     }
 
     checkWrathThresholds() {
-        if(this.wrath >= 10 && !this.wrathTriggers[10]) {
-            this.wrathTriggers[10] = true;
-            this.shield += this.maxHp * 0.30; 
-            showBanner('wrath-banner', 3000, "WRATH: Toeny");
-        }
-        if(this.wrath >= 20 && !this.wrathTriggers[20]) {
-            this.wrathTriggers[20] = true;
-            this.triggerLament();
-        }
-        if(this.wrath >= 30 && !this.wrathTriggers[30]) {
-            this.wrathTriggers[30] = true;
-            this.activateMoroccoRage();
-        }
-        if(this.wrath >= 40 && !this.wrathTriggers[40]) {
-            this.wrathTriggers[40] = true;
-            this.attackVoidBomb();
-        }
-        if(this.wrath >= 50 && !this.wrathTriggers[50]) {
-            this.wrathTriggers[50] = true;
-            this.attackDivineBarrage();
-        }
-        if(this.wrath >= 70 && !this.wrathTriggers[70]) {
-            this.wrathTriggers[70] = true;
-            this.attackLeapPunch();
-        }
+        if(this.wrath >= 20 && !this.wrathTriggers[20]) { this.wrathTriggers[20] = true; this.triggerLament(); }
+        if(this.wrath >= 40 && !this.wrathTriggers[40]) { this.wrathTriggers[40] = true; this.attackVoidBomb(); }
+        if(this.wrath >= 60 && !this.wrathTriggers[60]) { this.wrathTriggers[60] = true; this.activateMoroccoRage(); }
+        if(this.wrath >= 80 && !this.wrathTriggers[80]) { this.wrathTriggers[80] = true; this.attackLeapPunch(); }
     }
 
     activateMoroccoRage() {
-        this.gloryMode = true;
-        this.gloryTimer = 8000; 
-        showBanner('morocco-banner', 4000, "GLORY TO MOROCCO");
+        this.gloryMode = true; this.gloryTimer = 8000; 
+        this.setAnim('spin');
+        showBanner('wrath-banner', 4000, "GLORY TO MOROCCO");
         entities.forEach(e => { if(e.faction === 'ally' && e.hp < 1000) e.takeDamage(9999); });
         for(let i=0; i<4; i++) spawnEntity('void_twin', this.mesh.position);
     }
 
     triggerRetreat() {
         showBanner('wrath-banner', 3000, " RETREAT");
-        this.retreatMode = true;
-        this.retreatTimer = 4000;
-        this.shield += 2000;
-        
-        let dir = new THREE.Vector3().subVectors(this.mesh.position, playerObj.position).normalize();
-        if(this.mesh.position.length() > 200) dir = new THREE.Vector3().subVectors(new THREE.Vector3(0,0,0), this.mesh.position).normalize();
+        this.retreatMode = true; this.retreatTimer = 4000; this.shield += 5000;
+        let dir = reusableVector.subVectors(this.mesh.position, playerObj.position).normalize();
+        if(this.mesh.position.length() > 200) dir.subVectors(reusableVector.set(0,0,0), this.mesh.position).normalize();
         dir.y = 0;
         let jumpFrames = 0;
         const jumpInt = setInterval(() => {
@@ -452,42 +570,35 @@ class BossEntity extends Entity {
             jumpFrames++;
             if(jumpFrames > 20) { clearInterval(jumpInt); this.mesh.position.y = 0; }
         }, 16);
-        setTimeout(() => this.attackSpikes(), 1000);
-        setTimeout(() => this.attackSpikes(), 2000);
     }
 
     checkStage() {
         const pct = this.hp / this.maxHp;
         let newStage = 1;
-        if(pct < 0.2) newStage = 5;
-        else if(pct < 0.4) newStage = 4;
-        else if(pct < 0.6) newStage = 3;
-        else if(pct < 0.8) newStage = 2;
-
-        if(newStage > this.stage) {
-            this.stage = newStage;
-            this.triggerStageEvent();
-        }
+        if(pct < 0.2) newStage = 5; else if(pct < 0.4) newStage = 4; else if(pct < 0.6) newStage = 3; else if(pct < 0.8) newStage = 2;
+        if(newStage > this.stage) { this.stage = newStage; this.triggerStageEvent(); }
     }
 
     triggerStageEvent() {
+        this.wrath = 0; 
+        this.wrathTriggers = {};
         let msg = "";
         switch(this.stage) {
-            case 2: 
-                msg = "STAGE 2: dynasty"; 
-                this.summonStage2Units();
-                break;
+            case 2: msg = "STAGE 2: dynasty"; this.summonStage2Units(); break;
             case 3: msg = "STAGE 3: Pizza Salvatore"; spawnEntity('titan', this.mesh.position); spawnEntity('titan', this.mesh.position); document.getElementById('ab-4').style.display = 'flex'; break;
-            case 4: msg = "STAGE 4: Fart attack"; this.attackMeteorRain(); break;
-            case 5: 
-                msg = "STAGE 5: The Sultan make the rules"; 
+            case 4: msg = "STAGE 4: Fart attack";
+                this.attackMeteorRain();
+                this.attackCataclysm();
+                break;
+            case 5: msg = "STAGE 5: The Sultan makes the rules. Kneel to Morroco"; 
                 this.hp += this.maxHp * 1.00; 
-                this.shield += this.maxHp * 0.80; 
+                this.shield += this.maxHp * 1.0; 
                 this.attackCataclysm(); 
-                this.attackMeteorRain(true); 
                 this.summonStage2Units(); 
+                this.summonStage2Units();
                 this.attackCataclysm(); 
-                this.attackCataclysm(); 
+                this.attackCataclysm();
+                this.attackCataclysm();
                 break;
         }
         showBanner('stage-banner', 4000, msg);
@@ -496,145 +607,129 @@ class BossEntity extends Entity {
     }
     
     summonStage2Units() {
-        for(let i=0; i<7; i++) spawnEntity('elite', this.mesh.position);
-        for(let i=0; i<10; i++) spawnEntity('twin', this.mesh.position);
+        for(let i=0; i<8; i++) spawnEntity('elite', this.mesh.position);
+        for(let i=0; i<12; i++) spawnEntity('twin', this.mesh.position);
         spawnEntity('titan', this.mesh.position);
     }
 
     addArmor() {
-        const plateL = new THREE.Mesh(GEOS.plate, MATS.armorGold);
-        plateL.position.set(-0.8, 2.2, 0); plateL.rotation.z = 0.5;
-        this.mesh.add(plateL);
-        const plateR = new THREE.Mesh(GEOS.plate, MATS.armorGold);
-        plateR.position.set(0.8, 2.2, 0); plateR.rotation.z = -0.5;
-        this.mesh.add(plateR);
+        const plateL = new THREE.Mesh(GEOS.plate, MATS.armorGold); plateL.position.set(-0.8, 2.2, 0); plateL.rotation.z = 0.5; this.mesh.add(plateL);
+        const plateR = new THREE.Mesh(GEOS.plate, MATS.armorGold); plateR.position.set(0.8, 2.2, 0); plateR.rotation.z = -0.5; this.mesh.add(plateR);
     }
 
     selectAttack() {
-        this.lastAttackTime = performance.now();
         const allies = entities.filter(e => e.faction === 'ally').length;
         const r = Math.random();
-        
-        if(allies > 8 && r < 0.3) { this.attackGrandSlam(); return; }
-
-        // SPAM INCREASED
-        if(r < 0.6) this.activateMoroccoRage();
-        else if(r < 0.35) this.triggerLament(); 
-        else if(r < 0.60) this.attackSpikes();  
-        else if(r < 0.70) this.attackMeteorRain(true); 
-        else if(r < 0.80) this.attackMultiBeam();
-        else if(r < 0.90) this.attackLeapPunch();
+        if(allies > 8 && r < 0.4) { this.attackGrandSlam(); return; }
+        if(r < 0.2) this.triggerLament(); 
+        else if(r < 0.4) this.attackSpikes(); 
+        else if(r < 0.55) this.attackMeteorRain(true); 
+        else if(r < 0.70) this.attackMultiBeam(); 
+        else if(r < 0.85) this.attackLeapPunch(); 
         else this.fireVoidCannon();
     }
     
-    // --- SPECIAL ATTACKS ---
+    setAnim(state) {
+        this.animState = state;
+        this.animTimer = 0;
+    }
 
+    updateAnim(dt) {
+        this.animTimer += dt;
+        if (this.animState === 'spin') {
+            if(this.limbs.rightArm) this.limbs.rightArm.rotation.x += dt * 10;
+            if(this.limbs.leftArm) this.limbs.leftArm.rotation.x += dt * 10;
+            this.mesh.rotation.y += dt * 10;
+            if (this.animTimer > 1.5) { this.mesh.rotation.y = 0; this.setAnim('idle'); }
+        } else if (this.animState === 'smash') {
+            if(this.limbs.rightArm) this.limbs.rightArm.rotation.x = Math.sin(this.animTimer * 10) * 2;
+             if (this.animTimer > 0.5) { 
+                 if(this.limbs.rightArm) this.limbs.rightArm.rotation.x = 0; 
+                 this.setAnim('idle'); 
+             }
+        }
+    }
+    
     triggerLament() {
         showBanner('lament-banner', 3000, "I Love CCQ");
-        entities.forEach(e => { 
-            if(e.faction === 'ally') e.takeDamage(300); 
-        });
-        damagePlayer(30);
+        this.setAnim('channel');
+        const wave = new THREE.Mesh(GEOS.torus, MATS.projVoid);
+        wave.rotation.x = Math.PI / 2; wave.position.copy(this.mesh.position); scene.add(wave);
+        let s=1; const int = setInterval(() => { s+=4; wave.scale.set(s,s,1); if(s > 200) { clearInterval(int); scene.remove(wave); this.setAnim('idle');} }, 16);
+        entities.forEach(e => { if(e.faction === 'ally') e.takeDamage(600); });
+        damagePlayer(40);
     }
 
     attackVoidBomb() {
         showBanner('wrath-banner', 3000, "Gas bomb");
-        const bomb = new THREE.Mesh(new THREE.SphereGeometry(5, 32, 32), MATS.projVoid);
+        this.setAnim('smash');
+        const bomb = new THREE.Mesh(new THREE.SphereGeometry(6, 32, 32), MATS.projVoid);
         bomb.position.set(0, 50, 0); scene.add(bomb);
-        let f=0;
         const bInt = setInterval(() => {
             bomb.position.y -= 2;
             if(bomb.position.y <= 0) {
                 clearInterval(bInt); scene.remove(bomb);
+                triggerScreenShake(0.8, 1);
+                particleSystem.emit({ pos: reusableVector.set(0,1,0), vel: reusableVector.set(0,2,0), count: 300, life: 3, size: 2, color: new THREE.Color(0x800080), spread: 35 });
                 entities.forEach(e => { if(e.faction === 'ally') e.takeDamage(99999); });
-                damagePlayer(60);
-                const w = new THREE.Mesh(new THREE.TorusGeometry(1,2,16,100), MATS.projVoid);
-                w.rotation.x=Math.PI/2; scene.add(w);
-                let s=1; const wInt = setInterval(()=>{ s+=10; w.scale.set(s,s,1); if(s>200){clearInterval(wInt); scene.remove(w);} }, 16);
+                damagePlayer(70);
             }
         }, 16);
-    }
-
-    attackDivineBarrage() {
-        showBanner('wrath-banner', 2000, "DIVINE BARRAGE");
-        let count = 0;
-        const int = setInterval(() => {
-            count++;
-            const beam = new THREE.Mesh(GEOS.beam, MATS.projEnemy);
-            const start = this.mesh.position.clone().add(new THREE.Vector3(0,5,0));
-            const end = playerObj.position.clone();
-            beam.position.copy(start).lerp(end, 0.5);
-            beam.scale.set(1, start.distanceTo(end), 1); beam.lookAt(end); beam.rotateX(Math.PI/2);
-            scene.add(beam);
-            setTimeout(() => scene.remove(beam), 200);
-            damagePlayer(25);
-            
-            if(count >= 5) clearInterval(int);
-        }, 1500);
-        
-        this.attackMeteorRain(true);
     }
 
     attackLeapPunch() {
-        this.castAnimTimer = 1.0;
         const start = this.mesh.position.clone();
         const end = playerObj.position.clone();
         let f = 0;
+        this.setAnim('smash');
         const leap = setInterval(() => {
             f += 0.05;
             this.mesh.position.lerpVectors(start, end, f);
-            this.mesh.position.y = Math.sin(f * Math.PI) * 20;
+            this.mesh.position.y = Math.sin(f * Math.PI) * 25;
             if(f >= 1) {
                 clearInterval(leap); this.mesh.position.y = 0;
-                if(this.mesh.position.distanceTo(playerObj.position) < 6) damagePlayer(40);
+                triggerScreenShake(0.6, 0.6);
+                particleSystem.emit({ pos: this.mesh.position, vel: reusableVector.set(0,1,0), count: 150, life: 1.5, size: 1, color: new THREE.Color(0xffffff), spread: 20 });
+                if(this.mesh.position.distanceTo(playerObj.position) < 8) damagePlayer(60);
+                this.setAnim('idle');
             }
         }, 16);
     }
 
+
+    
     attackCataclysm() {
         showBanner('wrath-banner', 4000, "Crashout");
-        this.summonStage2Units();
+        this.setAnim('spin');
         this.attackMeteorRain(true); 
         setTimeout(() => this.attackMultiBeam(), 2000);
         setTimeout(() => this.attackSpikes(), 3000);
-        setTimeout(() => this.attackClones(), 4000);
         setTimeout(() => this.activateMoroccoRage(), 5000);
-        setTimeout(() => this.attackMultiBeam(), 6000);
-        setTimeout(() => this.attackSpikes(), 7000);
-        setTimeout(() => this.attackClones(), 8000);
-        setTimeout(() => this.attackMultiBeam(), 11000);
-        setTimeout(() => this.attackSpikes(), 14000);
-        setTimeout(() => this.attackClones(), 16000);
-        setTimeout(() => this.activateMoroccoRage(), 17000);
-        setTimeout(() => this.attackMultiBeam(), 18000);
-        setTimeout(() => this.attackSpikes(), 20000);
-        setTimeout(() => this.attackClones(), 22000);
+        setTimeout(() => this.fireVoidCannon(), 6000);
+        setTimeout(() => this.attackMultiBeam(), 7000);
+        setTimeout(() => this.attackVoidBomb(), 8000);
         
-      
-      for(let i=0; i<5; i++) spawnEntity('elite', this.mesh.position); // 5 Elites
-        for(let i=0; i<8; i++) spawnEntity('twin', this.mesh.position);  // 8 Twins
-        spawnEntity('titan', this.mesh.position); // 1 Void Titan
-
-      
+        
     }
 
     attackGrandSlam() {
         showBanner('wrath-banner', 2000, "SKY SHATTER");
-        this.actionTimer = 4000;
         let frames = 0;
+        this.setAnim('channel');
         const upInt = setInterval(() => {
             frames++;
             this.mesh.position.y = THREE.MathUtils.lerp(this.mesh.position.y, 40, 0.1);
             if(frames > 60) {
                 clearInterval(upInt);
                 setTimeout(() => {
-                    this.mesh.position.y = 0; 
-                    const wave = new THREE.Mesh(new THREE.TorusGeometry(1, 1, 16, 100), MATS.projVoid);
-                    wave.rotation.x = Math.PI/2; wave.position.copy(this.mesh.position); wave.scale.set(1,1,1);
-                    scene.add(wave);
-                    let s=1; const wInt = setInterval(()=>{ s+=4; wave.scale.set(s,s,1); if(s>100){clearInterval(wInt); scene.remove(wave);} }, 16);
-                    if(this.mesh.position.distanceTo(playerObj.position) < 80) damagePlayer(90);
-                    entities.forEach(e => { if(e.faction === 'ally' && e.mesh.position.distanceTo(this.mesh.position) < 80) e.takeDamage(2000); });
+                    this.mesh.position.y = 0;
+                    this.setAnim('smash');
+                    triggerScreenShake(1.2, 1.2);
+                    const wave = new THREE.Mesh(GEOS.torus, MATS.projVoid);
+                    wave.rotation.x = Math.PI/2; wave.position.copy(this.mesh.position); scene.add(wave);
+                    let s=1; const wInt = setInterval(()=>{ s+=5; wave.scale.set(s,s,1); if(s>120){clearInterval(wInt); scene.remove(wave);} }, 16);
+                    if(this.mesh.position.distanceTo(playerObj.position) < 100) damagePlayer(95);
+                    entities.forEach(e => { if(e.faction === 'ally' && e.mesh.position.distanceTo(this.mesh.position) < 100) e.takeDamage(3000); });
                 }, 400);
             }
         }, 16);
@@ -642,414 +737,246 @@ class BossEntity extends Entity {
 
     attackMeteorRain(buffed = false) {
         if(buffed) showBanner('wrath-banner', 2000, "Gluttony");
-        for(let i=0; i<6; i++) { 
+        this.setAnim('channel');
+        for(let i=0; i<8; i++) { 
             setTimeout(() => {
                 const allies = entities.filter(e => e.faction === 'ally');
                 let targetPos = playerObj.position.clone();
-                if(allies.length > 0 && Math.random() < 0.5) targetPos = allies[Math.floor(Math.random()*allies.length)].mesh.position.clone();
-
-                targetPos.add(new THREE.Vector3((Math.random()-0.5)*30, 0, (Math.random()-0.5)*30));
-
-                const warning = new THREE.Mesh(new THREE.CircleGeometry(3, 16), MATS.beamWarn);
+                if(allies.length > 0 && Math.random() < 0.5) targetPos.copy(allies[Math.floor(Math.random()*allies.length)].mesh.position);
+                targetPos.add(reusableVector.set((Math.random()-0.5)*30, 0, (Math.random()-0.5)*30));
+                
+                const warning = new THREE.Mesh(new THREE.CircleGeometry(4, 16), MATS.beamWarn);
                 warning.rotation.x = -Math.PI/2; warning.position.copy(targetPos); warning.position.y = 0.1;
                 scene.add(warning);
-
                 const orb = getProjectile();
-                orb.mesh.position.copy(targetPos).add(new THREE.Vector3(0, 40, 0)); 
-                orb.velocity.set(0, -12, 0); 
-                orb.life = 5.0; orb.active = true; 
-                orb.type = buffed ? 'meteor_buffed' : 'meteor_normal'; 
-                orb.faction = 'enemy'; 
+                orb.mesh.position.copy(targetPos).add(reusableVector.set(0, 50, 0)); 
+                orb.velocity.set(0, -18, 0); orb.life = 5.0; orb.active = true; 
+                orb.type = buffed ? 'meteor_buffed' : 'meteor_normal'; orb.faction = 'enemy'; 
                 orb.mesh.material = buffed ? MATS.projMeteor : MATS.projVoid; 
-                if(buffed) orb.mesh.scale.set(4,4,4); else orb.mesh.scale.set(1,1,1);
-                orb.mesh.visible = true;
-                orb.warningMesh = warning;
-            }, i * 500);
+                orb.mesh.scale.set(buffed ? 5 : 2, buffed ? 5 : 2, buffed ? 5 : 2);
+                orb.mesh.visible = true; orb.warningMesh = warning;
+            }, i * 400);
         }
     }
-
-    attackShockwave() {
-        const wave = new THREE.Mesh(GEOS.torus, MATS.projVoid);
-        wave.rotation.x = Math.PI/2;
-        wave.position.copy(this.mesh.position); wave.position.y = 1;
-        scene.add(wave);
-        let s = 1;
-        const int = setInterval(() => {
-            s += 1.5; wave.scale.set(s,s,1);
-            entities.forEach(e => {
-                if(e.faction === 'ally' && e.mesh.position.distanceTo(this.mesh.position) < s && e.mesh.position.distanceTo(this.mesh.position) > s-2) {
-                    e.takeDamage(150); 
-                }
-            });
-            if(wave.position.distanceTo(playerObj.position) < s && wave.position.distanceTo(playerObj.position) > s-2) damagePlayer(15);
-            if(s > 60) { clearInterval(int); scene.remove(wave); }
-        }, 16);
-    }
-
+    
     attackSpikes() {
         let targetPos = playerObj.position.clone();
-        if(this.target && !this.target.dead) targetPos = this.target.mesh.position.clone();
-
-        const warn = new THREE.Mesh(new THREE.CircleGeometry(2, 16), MATS.beamWarn);
+        this.setAnim('smash');
+        const warn = new THREE.Mesh(new THREE.CircleGeometry(3, 16), MATS.beamWarn);
         warn.rotation.x = -Math.PI/2; warn.position.copy(targetPos); warn.position.y = 0.1;
         scene.add(warn);
         setTimeout(() => {
             scene.remove(warn);
             const spike = new THREE.Mesh(GEOS.cyl, MATS.spike);
-            spike.scale.set(2, 8, 2); spike.position.copy(targetPos); spike.position.y = -4;
-            scene.add(spike);
+            spike.scale.set(3, 10, 3); spike.position.copy(targetPos); spike.position.y = -4; scene.add(spike);
             let f = 0;
             const anim = setInterval(() => {
-                f++; spike.position.y += 1;
-                if(f===8) {
-                    if(playerObj.position.distanceTo(spike.position) < 3) damagePlayer(40);
-                    entities.forEach(e => {
-                         if(e.faction === 'ally' && e.mesh.position.distanceTo(spike.position) < 3) e.takeDamage(300);
-                    });
+                f++; spike.position.y += 1.5;
+                if(f===6) {
+                    triggerScreenShake(0.3, 0.3);
+                    if(playerObj.position.distanceTo(spike.position) < 4) damagePlayer(50);
+                    entities.forEach(e => { if(e.faction === 'ally' && e.mesh.position.distanceTo(spike.position) < 4) e.takeDamage(600); });
                 }
-                if(f>15) { clearInterval(anim); scene.remove(spike); }
+                if(f>12) { clearInterval(anim); scene.remove(spike); }
             }, 16);
-        }, 1000);
-    }
-
-    attackCharge() {
-        this.castAnimTimer = 1.0;
-        let targetPos = playerObj.position.clone();
-        if(this.target && !this.target.dead) targetPos = this.target.mesh.position.clone();
-
-        const dir = new THREE.Vector3().subVectors(targetPos, this.mesh.position).normalize();
-        dir.y = 0;
-        let dist = 0;
-        const maxDist = 40; 
-        const charge = setInterval(() => {
-            this.mesh.position.add(dir.multiplyScalar(0.8));
-            dist += 0.8;
-            
-            if(this.mesh.position.distanceTo(playerObj.position) < 4) damagePlayer(50);
-            entities.forEach(e => {
-                if(e.faction === 'ally' && e.mesh.position.distanceTo(this.mesh.position) < 4) e.takeDamage(300);
-            });
-
-            if(dist > maxDist) clearInterval(charge);
-        }, 16);
+        }, 800);
     }
 
     attackMultiBeam() {
-        const dirs = [0, -0.3, 0.3];
-        let targetPos = playerObj.position.clone();
-        if(this.target && !this.target.dead) targetPos = this.target.mesh.position.clone();
-
+        const dirs = [0, -0.4, 0.4, -0.8, 0.8];
+        this.setAnim('channel');
+        const targetPos = playerObj.position.clone();
         dirs.forEach(offset => {
             const beam = new THREE.Mesh(GEOS.beam, MATS.projEnemy);
-            const start = this.mesh.position.clone().add(new THREE.Vector3(0,3,0));
-            const end = targetPos.clone();
-            const vec = new THREE.Vector3().subVectors(end, start).applyAxisAngle(new THREE.Vector3(0,1,0), offset);
-            end.copy(start).add(vec);
-            beam.position.copy(start).lerp(end, 0.5);
-            beam.scale.set(1, 100, 1); beam.lookAt(end); beam.rotateX(Math.PI/2);
-            scene.add(beam);
-            setTimeout(() => scene.remove(beam), 300);
-            
+            const start = this.mesh.position.clone().add(reusableVector.set(0,3,0));
+            const vec = reusableVector.subVectors(targetPos, start).applyAxisAngle(reusableVector.set(0,1,0), offset);
+            const end = reusableVector.copy(start).add(vec);
+            beam.position.copy(start).lerp(end, 0.5); beam.scale.set(1.5, 120, 1.5); beam.lookAt(end); beam.rotateX(Math.PI/2);
+            scene.add(beam); setTimeout(() => scene.remove(beam), 250);
             const ray = new THREE.Ray(start, vec.normalize());
-            
-            const pPos = playerObj.position.clone().add(new THREE.Vector3(0,1,0));
-            if(ray.distanceToPoint(pPos) < 2) damagePlayer(25);
-            
-            entities.forEach(e => {
-                 if(e.faction === 'ally' && ray.distanceToPoint(e.mesh.position.clone().add(new THREE.Vector3(0,1,0))) < 2) e.takeDamage(180);
-            });
+            if(ray.distanceToPoint(playerObj.position.clone().add(reusableVector.set(0,1,0))) < 2.5) damagePlayer(35);
+            entities.forEach(e => { if(e.faction === 'ally' && ray.distanceToPoint(e.mesh.position.clone().add(reusableVector.set(0,1,0))) < 3) e.takeDamage(250); });
         });
     }
 
-    attackGravityWell() {
-        showBanner('wrath-banner', 2000, "GRAVITY WELL");
-        const center = this.mesh.position.clone();
-        let dur = 0;
-        const pull = setInterval(() => {
-            const dist = center.distanceTo(playerObj.position);
-            if(dist > 8) {
-                const dir = new THREE.Vector3().subVectors(center, playerObj.position).normalize();
-                if(!playerStats.mechActive) playerObj.position.add(dir.multiplyScalar(0.2)); 
-            }
-            entities.forEach(e => {
-                if(e.faction === 'ally' && e.mesh.position.distanceTo(center) > 8) {
-                     const dir = new THREE.Vector3().subVectors(center, e.mesh.position).normalize();
-                     e.mesh.position.add(dir.multiplyScalar(0.2));
-                }
-            });
-            dur++;
-            if(dur > 100) clearInterval(pull);
-        }, 16);
-    }
-
-    attackClones() {
-        spawnEntity('twin', this.mesh.position);
-        spawnEntity('twin', this.mesh.position);
-    }
-
     fireVoidCannon() {
-        this.castAnimTimer = 1.0;
+        this.setAnim('smash');
         const orb = getProjectile();
-        orb.mesh.geometry = GEOS.sphere; orb.mesh.material = MATS.projVoid;
-        orb.mesh.scale.set(2,2,2);
-        orb.mesh.position.copy(this.mesh.position).add(new THREE.Vector3(0,4,0));
-        orb.mesh.visible = true;
-        
-        let targetPos = playerObj.position.clone();
-        if(this.target && !this.target.dead) targetPos = this.target.mesh.position.clone();
-
-        const dir = new THREE.Vector3().subVectors(targetPos, orb.mesh.position).normalize();
-        orb.velocity.copy(dir.multiplyScalar(25));
+        orb.mesh.geometry = GEOS.sphere; orb.mesh.material = MATS.projVoid; orb.mesh.scale.set(2.5,2.5,2.5);
+        orb.mesh.position.copy(this.mesh.position).add(reusableVector.set(0,4,0)); orb.mesh.visible = true;
+        const targetPos = playerObj.position.clone();
+        const dir = reusableVector.subVectors(targetPos, orb.mesh.position).normalize();
+        orb.velocity.copy(dir.multiplyScalar(35));
         orb.life = 5.0; orb.type = 'void_cannon'; orb.faction = 'enemy'; orb.active = true;
+        orb.light = getProjectileLight(); orb.light.color.set(0x800080); orb.light.intensity = 5;
     }
+}
+
+function getProjectileLight() {
+    const light = projectileLightPool[projectileLightIndex];
+    projectileLightIndex = (projectileLightIndex + 1) % PROJECTILE_LIGHT_POOL_SIZE;
+    return light;
 }
 
 function getProjectile() {
     let p = projectilePool.find(x => !x.active);
-    if(!p) {
+    if(!p) { 
         const m = new THREE.Mesh(GEOS.sphere, MATS.projPlayer);
         scene.add(m);
-        p = { mesh: m, active: false, velocity: new THREE.Vector3(), life: 0, warningMesh: null };
+        p = { mesh: m, light: null, active: false, velocity: new THREE.Vector3(), life: 0, warningMesh: null };
         projectilePool.push(p);
     }
+    if (p.light) {
+        p.light.intensity = 0;
+        p.light.position.set(0,-9999,0);
+    }
+    p.light = null;
     return p;
 }
 
 function startGame() {
-    gameActive = true;
-    cinematicMode = false;
+    gameActive = true; cinematicMode = false;
     document.getElementById('cinematic-bars').style.display = 'none';
     entities.forEach(e => scene.remove(e.mesh)); entities = [];
     projectilePool.forEach(p => { p.active = false; p.mesh.visible = false; if(p.warningMesh) { scene.remove(p.warningMesh); p.warningMesh = null; } });
     
-    camera.position.set(0,0,0);
-    camera.rotation.set(0,0,0);
-    playerObj.add(camera);
-    playerObj.position.set(0, 1.7, 50);
-    playerMesh.visible = false;
+    camera.position.set(0,0,0); camera.rotation.set(0,0,0); playerObj.add(camera);
+    playerObj.position.set(0, 1.7, 50); playerMesh.visible = false;
+    if(weaponModels.rifle) weaponModels.rifle.visible = false;
+    if(weaponModels.railgun) weaponModels.railgun.visible = false;
 
-    boss = new BossEntity(new THREE.Vector3(0,0,-60));
-    entities.push(boss);
+    boss = new BossEntity(new THREE.Vector3(0,0,-80)); entities.push(boss);
 
-    playerStats.hp = CONFIG.PLAYER_MAX_HP; playerStats.shield = 0;
-    playerStats.rifleActive = false; playerStats.rifleAmmo = 0;
-    playerStats.mechActive = false; playerStats.mechTimer = 0;
-    playerStats.ascended = false; playerStats.invincible = false;
-    playerStats.lamentShieldTimer = 0;
-    playerStats.leaping = false;
-    mechSword.visible = false;
-    
+    playerStats = { ...playerStats, hp: CONFIG.PLAYER_MAX_HP, shield: 0, rifleActive: false, rifleAmmo: 0, mechActive: false, mechTimer: 0, ascended: false, invincible: false, lamentShieldTimer: 0, leaping: false };
     for(let k in playerStats.cooldowns) { playerStats.cooldowns[k] = 0; document.getElementById('cd-'+k).style.height = '0%'; document.getElementById('ab-'+k).classList.add('ready'); }
 
-    document.getElementById('overlay').style.display = 'none';
-    document.getElementById('ab-4').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none'; document.getElementById('ab-4').style.display = 'none';
     lastTime = performance.now();
-    updatePlayerUI();
-    updateBossUI();
+    updatePlayerUI(); updateBossUI();
 }
 
-// --- CINEMATICS ---
-
 function triggerVictoryCinematic() {
-    gameActive = false;
-    cinematicMode = 'victory';
-    cinematicTimer = 0;
+    gameActive = false; cinematicMode = 'victory'; cinematicTimer = 0;
     document.exitPointerLock();
     document.getElementById('cinematic-bars').style.display = 'flex';
     document.getElementById('ui-layer').style.display = 'none';
-
-    boss.mesh.rotation.x = -Math.PI/2;
-    boss.mesh.position.y = 1;
-
-    playerObj.remove(camera);
-    scene.add(camera);
-    const camPos = boss.mesh.position.clone().add(new THREE.Vector3(20, 5, 20));
-    camera.position.copy(camPos);
+    boss.mesh.rotation.x = -Math.PI/2; boss.mesh.position.y = 1;
+    playerObj.remove(camera); scene.add(camera);
+    
+    camera.position.copy(boss.mesh.position.clone().add(reusableVector.set(10, 20, 10)));
     camera.lookAt(boss.mesh.position);
-
-    playerMesh.visible = true;
-    const dir = new THREE.Vector3().subVectors(boss.mesh.position, playerObj.position).normalize();
-    playerObj.position.copy(boss.mesh.position).sub(dir.multiplyScalar(15));
-    playerObj.lookAt(boss.mesh.position);
+    
+    for(let i=0; i<10; i++) {
+        setTimeout(() => {
+             particleSystem.emit({ pos: boss.mesh.position.clone().add(reusableVector.set((Math.random()-0.5)*20, 10, (Math.random()-0.5)*20)), vel: reusableVector.set(0,10,0), count: 200, life: 2.0, size: 2.0, color: new THREE.Color(0xffff00), spread: 20 });
+        }, i * 500);
+    }
 }
 
 function runVictoryCinematic(dt) {
     cinematicTimer += dt;
-    playerMesh.visible = true;
+    camera.position.x = boss.mesh.position.x + Math.sin(cinematicTimer * 0.5) * 30;
+    camera.position.z = boss.mesh.position.z + Math.cos(cinematicTimer * 0.5) * 30;
+    camera.lookAt(boss.mesh.position);
 
-    if(cinematicTimer < 3) {
-        const dir = new THREE.Vector3().subVectors(boss.mesh.position, playerObj.position).normalize();
-        playerObj.position.add(dir.multiplyScalar(dt * 2)); 
-        playerMesh.children[4].rotation.x = Math.sin(cinematicTimer*10);
-        playerMesh.children[5].rotation.x = -Math.sin(cinematicTimer*10);
+    if(cinematicTimer > 3 && boss.mesh.scale.x > 0) {
+        boss.mesh.scale.subScalar(dt * 0.3);
     }
-    else if(cinematicTimer < 4) {
-        playerMesh.children[4].rotation.x = 0; playerMesh.children[5].rotation.x = 0;
-        playerMesh.children[3].rotation.x = -1.5; 
-    }
-    else if(cinematicTimer < 4.1) {
-        const beam = new THREE.Mesh(new THREE.CylinderGeometry(2, 4, 20, 16), new THREE.MeshBasicMaterial({color: 0xffff00}));
-        beam.rotation.x = Math.PI/2;
-        beam.position.copy(playerObj.position).add(new THREE.Vector3(0, 1.5, 0));
-        beam.position.add(playerObj.getWorldDirection(new THREE.Vector3()).multiplyScalar(10));
-        scene.add(beam);
-        
-        document.getElementById('white-screen').style.transition = 'opacity 0.2s';
-        document.getElementById('white-screen').style.opacity = 0.8;
-    }
-    else if(cinematicTimer < 6) {
-        boss.mesh.scale.subScalar(dt * 0.5);
-        if(boss.mesh.scale.x < 0) boss.mesh.visible = false;
-        document.getElementById('white-screen').style.opacity = 0;
-    }
-    else {
+
+    if(cinematicTimer > 8) {
         document.getElementById('overlay').style.display = 'flex'; 
         document.querySelector('h1').innerText = "VICTORY";
-        document.querySelector('p').innerText = "Lord Sultan has been purged from the Void.";
+        document.querySelector('p').innerText = "Lord Sultan has been purged. The Void collapses.";
         document.getElementById('ui-layer').style.display = 'flex';
         cinematicMode = false;
     }
 }
 
 function triggerDefeatCinematic() {
-    gameActive = false;
-    cinematicMode = 'defeat';
-    cinematicTimer = 0;
+    gameActive = false; cinematicMode = 'defeat'; cinematicTimer = 0;
     document.exitPointerLock();
     document.getElementById('cinematic-bars').style.display = 'flex';
     document.getElementById('ui-layer').style.display = 'none';
-
-    playerObj.remove(camera);
-    scene.add(camera);
-    // Initial 3rd person cam
-    const camPos = playerObj.position.clone().add(new THREE.Vector3(10, 5, 10));
-    camera.position.copy(camPos);
+    playerObj.remove(camera); scene.add(camera);
+    
+    camera.position.copy(playerObj.position.clone().add(reusableVector.set(5, 15, 5)));
     camera.lookAt(playerObj.position);
     playerMesh.visible = true;
+    playerMesh.rotation.x = -Math.PI/2; 
 }
 
 function runDefeatCinematic(dt) {
     cinematicTimer += dt;
-    playerMesh.visible = true;
-
-    if(cinematicTimer < 2) {
-        const dir = new THREE.Vector3().subVectors(playerObj.position, boss.mesh.position).normalize();
-        if(boss.mesh.position.distanceTo(playerObj.position) > 2) {
-            boss.mesh.position.add(dir.multiplyScalar(dt * 8));
+    if(cinematicTimer < 4) {
+        camera.position.y += dt * 2;
+        if(boss && boss.mesh) {
             boss.mesh.lookAt(playerObj.position);
+            boss.mesh.position.lerp(playerObj.position, dt * 0.5);
         }
-        camera.lookAt(playerObj.position);
-    }
-    else if(cinematicTimer < 2.5) {
-        const closePos = boss.mesh.position.clone().add(new THREE.Vector3(3, 4, 3));
-        camera.position.lerp(closePos, dt * 5);
-        camera.lookAt(boss.mesh.position.clone().add(new THREE.Vector3(0,3,0)));
-        boss.mesh.children[6].rotation.x = -Math.PI; 
-    }
-    else if(cinematicTimer < 3.0) {
-        const handPos = boss.mesh.position.clone().add(new THREE.Vector3(0.65, 3.5, 0.4));
-        playerObj.position.copy(handPos);
-        playerObj.rotation.x = -Math.PI/2; 
-    }
-    else if(cinematicTimer < 4.5) {
-        boss.mesh.rotation.y += dt * 10;
-        const handOffset = new THREE.Vector3(0, 4, 1.5).applyAxisAngle(new THREE.Vector3(0,1,0), boss.mesh.rotation.y);
-        playerObj.position.copy(boss.mesh.position).add(handOffset);
-        playerObj.rotation.y = boss.mesh.rotation.y;
-        const camOffset = new THREE.Vector3(0, 5, 8).applyAxisAngle(new THREE.Vector3(0,1,0), boss.mesh.rotation.y);
-        camera.position.copy(boss.mesh.position).add(camOffset);
-        camera.lookAt(boss.mesh.position.clone().add(new THREE.Vector3(0,4,0)));
-    }
-    else if(cinematicTimer < 6.0) {
-        boss.mesh.children[6].rotation.x = -0.5;
-        playerObj.position.y += dt * 80;
-        playerObj.rotation.x += dt * 10;
-        camera.lookAt(playerObj.position);
-    }
-    else {
+    } else {
          document.getElementById('overlay').style.display = 'flex'; 
          document.querySelector('h1').innerText = "DEFEAT";
-         document.querySelector('p').innerText = "Refresh to try again (its a bug), spam 1 and e in the beginning to survive the Sultan.";
+         document.querySelector('p').innerText = "Sultan claims another soul. Refresh to restart.";
          document.getElementById('ui-layer').style.display = 'flex';
          cinematicMode = false;
     }
 }
 
-// --- INPUT & COMBAT ---
 function handleAbilityInput(k) {
     if(!gameActive || ascensionCinematic > 0 || interventionCinematic > 0) return;
     
     if(k === '1' && playerStats.cooldowns['1'] <= 0) {
-        playerStats.shield += 70;
-        playerStats.health += 30;
+        playerStats.shield += 70; playerStats.health += 30;
         spawnEntity('guardian', playerObj.position);
-        const beam = new THREE.Mesh(GEOS.beam, MATS.beamWarn);
-        beam.scale.set(2, 50, 2); beam.position.copy(playerObj.position);
-        scene.add(beam); setTimeout(()=>scene.remove(beam), 1000);
+        const shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(2, 16, 16), new THREE.MeshBasicMaterial({color: 0x00ffff, transparent:true, opacity: 0.3}));
+        shieldMesh.position.copy(playerObj.position); scene.add(shieldMesh);
+        setTimeout(()=>scene.remove(shieldMesh), 500);
         playerStats.cooldowns['1'] = CD_MAX['1']; triggerCooldownUI('1');
     }
     else if (k === '2') {
-        if(playerStats.ascended) {
-            if(playerStats.directHitTimer <= 0) { holyDirectHit(); playerStats.directHitTimer = CONFIG.DIRECT_HIT_CD; }
-        } else if (playerStats.cooldowns['2'] <= 0) {
-            playerStats.rifleActive = true; playerStats.rifleAmmo = 200;
-            document.getElementById('ammo-counter').style.display = 'block'; updatePlayerUI();
+        if(playerStats.ascended) { if(playerStats.directHitTimer <= 0) { holyDirectHit(); playerStats.directHitTimer = CONFIG.DIRECT_HIT_CD; } } 
+        else if (playerStats.cooldowns['2'] <= 0) { 
+            playerStats.rifleActive = true; playerStats.rifleAmmo = 250; 
+            document.getElementById('ammo-counter').style.display = 'block'; 
+            weaponModels.rifle.visible = true;
+            updatePlayerUI(); 
         }
     }
-    else if (k === '3' && playerStats.cooldowns['3'] <= 0) {
-        performIntervention();
-        playerStats.cooldowns['3'] = CD_MAX['3']; triggerCooldownUI('3');
-    }
+    else if (k === '3' && playerStats.cooldowns['3'] <= 0) { performIntervention(); playerStats.cooldowns['3'] = CD_MAX['3']; triggerCooldownUI('3'); }
     else if (k === 'e' && playerStats.cooldowns['e'] <= 0) {
-        playerStats.mechActive = true; playerStats.mechTimer = CONFIG.MECH_DURATION;
-        playerStats.shield += CONFIG.MECH_SHIELD;
+        playerStats.mechActive = true; playerStats.mechTimer = CONFIG.MECH_DURATION; playerStats.shield += CONFIG.MECH_SHIELD;
         playerStats.cooldowns['e'] = CD_MAX['e']; triggerCooldownUI('e');
-        document.getElementById('mech-indicator').style.display = 'block';
-        document.getElementById('mech-overlay').style.display = 'block';
-        mechSword.visible = true;
+        document.getElementById('mech-indicator').style.display = 'block'; document.getElementById('mech-overlay').style.display = 'block';
+        weaponModels.railgun.visible = true;
+        particleSystem.emit({ pos: playerObj.position, vel: reusableVector.set(0,0,0), count: 100, life: 1.0, size: 1.0, color: new THREE.Color(0x00ffff), spread: 15 });
     }
-    else if (k === 'shift' && playerStats.cooldowns['shift'] <= 0 && !playerStats.leaping) {
-        performPlayerLeap();
-        playerStats.cooldowns['shift'] = CD_MAX['shift']; triggerCooldownUI('shift');
-    }
-    else if (k === 'f' && playerStats.cooldowns['f'] <= 0) {
-        performLamentForTheLiving();
-        playerStats.cooldowns['f'] = CD_MAX['f']; triggerCooldownUI('f');
-    }
-    else if (k === '4' && boss.stage >= 3 && !playerStats.ascended) {
-        performAscension();
-    }
+    else if (k === 'shift' && playerStats.cooldowns['shift'] <= 0 && !playerStats.leaping) { performPlayerLeap(); playerStats.cooldowns['shift'] = CD_MAX['shift']; triggerCooldownUI('shift'); }
+    else if (k === 'f' && playerStats.cooldowns['f'] <= 0) { performLamentForTheLiving(); playerStats.cooldowns['f'] = CD_MAX['f']; triggerCooldownUI('f'); }
+    else if (k === '4' && boss.stage >= 3 && !playerStats.ascended) { performAscension(); }
 }
 
 function performPlayerLeap() {
     playerStats.leaping = true;
-    const dir = camera.getWorldDirection(new THREE.Vector3());
-    dir.y = 0; dir.normalize();
-    
+    camera.getWorldDirection(moveDir); moveDir.y = 0; moveDir.normalize();
     let frames = 0;
+    
+    particleSystem.emit({ pos: playerObj.position, vel: reusableVector.set(0,2,0), count: 50, life: 0.5, size: 1, color: new THREE.Color(0x00ffff), spread: 5 });
+    
     const leapInt = setInterval(() => {
         frames++;
-        playerObj.position.add(dir.multiplyScalar(1.0)); // Move fast
-        playerObj.position.y = Math.sin((frames/15) * Math.PI) * 5 + 1.7;
+        // Shortened leap (~20 units total)
+        playerObj.position.add(moveDir.multiplyScalar(1.0)); 
+        playerObj.position.y = Math.sin((frames/20) * Math.PI) * 6 + 1.7;
         
-        if(frames >= 15) {
-            clearInterval(leapInt);
-            playerStats.leaping = false;
-            playerObj.position.y = 1.7;
-            
-            // Landing Effect
-            const shock = new THREE.Mesh(new THREE.CircleGeometry(10, 32), new THREE.MeshBasicMaterial({color: 0x00ffff, transparent: true, opacity: 0.5}));
-            shock.rotation.x = -Math.PI/2; shock.position.copy(playerObj.position); shock.position.y = 0.1;
-            scene.add(shock);
-            setTimeout(() => scene.remove(shock), 500);
-            
-            // Damage & Stun
-            entities.forEach(e => {
-                if(e.faction === 'enemy' && !e.dead && e.mesh.position.distanceTo(playerObj.position) < 10) {
-                    e.takeDamage(50, true);
-                    e.stunTimer = 3000;
-                }
-            });
+        if(frames % 2 === 0) {
+             particleSystem.emit({ pos: playerObj.position, vel: reusableVector.set(0,0,0), count: 5, life: 0.2, size: 0.5, color: new THREE.Color(0x00ffff), spread: 1 });
+        }
+
+        if(frames >= 20) {
+            clearInterval(leapInt); playerStats.leaping = false; playerObj.position.y = 1.7;
+            triggerScreenShake(0.6, 0.4);
+            particleSystem.emit({ pos: playerObj.position, vel: reusableVector.set(0,3,0), count: 150, life: 1, size: 1.5, color: new THREE.Color(0x00ffff), spread: 15 });
+            entities.forEach(e => { if(e.faction === 'enemy' && !e.dead && e.mesh.position.distanceTo(playerObj.position) < 15) { e.takeDamage(200, true); e.stunTimer = 3000; } });
         }
     }, 16);
 }
@@ -1063,8 +990,7 @@ function performIntervention() {
             for(let i=0; i<4; i++) spawnEntity('soldier', playerObj.position);
             for(let i=0; i<2; i++) spawnEntity('guardian', playerObj.position);
             const strike = new THREE.Mesh(GEOS.beam, MATS.summonBeam);
-            strike.position.copy(playerObj.position).add(new THREE.Vector3(0,0,-5));
-            strike.scale.set(5, 100, 5);
+            strike.position.copy(playerObj.position).add(reusableVector.set(0,50,0)); strike.scale.set(5, 100, 5);
             scene.add(strike); setTimeout(()=>scene.remove(strike), 500);
             fireHolyBeams();
         }, 300);
@@ -1076,14 +1002,13 @@ function performLamentForTheLiving() {
     let absorbed = 0;
     entities.forEach(e => {
         if(e.faction === 'ally') {
-            e.kneel();
-            absorbed += e.hp;
+            e.kneel(); absorbed += e.hp;
+            particleSystem.emit({ pos: e.mesh.position, vel: reusableVector.subVectors(playerObj.position, e.mesh.position).normalize().multiplyScalar(20), count: 20, life: 1, size: 0.5, color: new THREE.Color(0xffff00), spread: 2 });
             setTimeout(() => e.takeDamage(99999), 1000);
         }
     });
     if(absorbed > 0) {
-        playerStats.shield += absorbed;
-        playerStats.lamentShieldTimer = 15000;
+        playerStats.shield += absorbed; playerStats.lamentShieldTimer = 15000;
         playerStats.damageBuff = 2.0; playerStats.buffTimer = 10000;
         document.getElementById('buff-text').style.display = 'block';
     }
@@ -1108,89 +1033,109 @@ function performAscension() {
 }
 
 function holyDirectHit() {
-    const ray = new THREE.Raycaster(); ray.setFromCamera(new THREE.Vector2(0,0), camera);
-    const intersects = ray.intersectObjects(entities.map(e=>e.mesh));
+    raycaster.setFromCamera({x:0, y:0}, camera);
+    const intersects = raycaster.intersectObjects(entities.map(e=>e.mesh), true);
     const beam = new THREE.Mesh(GEOS.beam, MATS.projPlayer);
-    beam.rotation.x = -Math.PI/2; 
-    beam.position.copy(playerObj.position).add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(50)); 
-    beam.scale.set(0.5, 100, 0.5); beam.lookAt(playerObj.position);
+    camera.getWorldPosition(cameraWorldPos);
+    camera.getWorldDirection(cameraWorldDir);
+    beam.position.copy(cameraWorldPos).add(cameraWorldDir.multiplyScalar(50)); 
+    beam.scale.set(0.5, 100, 0.5); beam.lookAt(playerObj.position); beam.rotateX(Math.PI/2);
     scene.add(beam); setTimeout(()=>scene.remove(beam), 100);
     if(intersects.length > 0) {
-        const hit = entities.find(e => e.mesh === intersects[0].object || e.mesh === intersects[0].object.parent);
-        if(hit) hit.takeDamage(CONFIG.DIRECT_HIT_DMG * playerStats.damageBuff, true);
+        const hit = entities.find(e => e.mesh === intersects[0].object.parent);
+        if(hit) {
+            hit.takeDamage(CONFIG.DIRECT_HIT_DMG * playerStats.damageBuff, true);
+            particleSystem.emit({ pos: intersects[0].point, vel: reusableVector.set(0,0,0), count: 50, life: 1, size: 1, color: new THREE.Color(0x00ffff), spread: 10 });
+        }
     }
 }
 
-function fireHolyBeams() {
-    entities.forEach(e => {
-        if(e.faction === 'enemy') {
-            e.takeDamage(100 * playerStats.damageBuff, false); e.stunTimer = 4000;
-        }
-    });
-}
+function fireHolyBeams() { entities.forEach(e => { if(e.faction === 'enemy') { e.takeDamage(100 * playerStats.damageBuff, false); e.stunTimer = 4000; } }); }
 
 function handleContinuousFire(dt) {
     if(!gameActive) return;
     if(isMouseDown && playerStats.ascended) { if(playerStats.directHitTimer <= 0) { holyDirectHit(); playerStats.directHitTimer = 1000; } }
-    if(isMouseDown && playerStats.mechActive) { if(playerStats.attackTimer <= 0) { playerStats.attackTimer = CONFIG.MECH_BLADE_RATE; performMechSlash(); } } 
+    if(isMouseDown && playerStats.mechActive) { if(playerStats.attackTimer <= 0) { playerStats.attackTimer = CONFIG.RAILGUN_CD; fireRailgun(); } } 
     else if(isMouseDown && playerStats.rifleActive && !playerStats.ascended) {
-        if(playerStats.rifleAmmo > 0) {
-            if(playerStats.attackTimer <= 0) {
-                playerStats.rifleAmmo--;
-                shootProjectile(true); 
-                playerStats.attackTimer = CONFIG.RIFLE_RATE;
-                updatePlayerUI();
+        if(playerStats.rifleAmmo > 0 && playerStats.attackTimer <= 0) {
+            playerStats.rifleAmmo--;
+            shootProjectile(true); 
+            playerStats.attackTimer = CONFIG.RIFLE_RATE;
+            updatePlayerUI();
+            if(playerStats.rifleAmmo <= 0) { 
+                playerStats.rifleActive = false; 
+                playerStats.cooldowns['2'] = CD_MAX['2']; 
+                triggerCooldownUI('2'); 
+                document.getElementById('ammo-counter').style.display = 'none'; 
+                weaponModels.rifle.visible = false;
             }
-            if(playerStats.rifleAmmo <= 0) { playerStats.rifleActive = false; playerStats.cooldowns['2'] = CD_MAX['2']; triggerCooldownUI('2'); document.getElementById('ammo-counter').style.display = 'none'; }
         }
     }
 }
 
 document.addEventListener('mousedown', (e) => {
-    if(document.pointerLockElement === document.body && e.button === 0) {
-        if(!playerStats.rifleActive && !playerStats.mechActive && !playerStats.ascended && ascensionCinematic === 0) {
-            if(playerStats.throwTimer <= 0) {
-                playerStats.throwTimer = CONFIG.THROW_CD;
-                shootProjectile(false); 
-            }
-        }
+    if(document.pointerLockElement === document.body && e.button === 0 && !playerStats.rifleActive && !playerStats.mechActive && !playerStats.ascended && ascensionCinematic === 0) {
+        if(playerStats.throwTimer <= 0) { playerStats.throwTimer = CONFIG.THROW_CD; shootProjectile(false); }
     }
 });
 
-function performMechSlash() {
-    let anim = 0;
-    const slashInterval = setInterval(() => {
-        anim += 0.3; mechSword.rotation.y = -Math.PI + anim*2; 
-        if(anim > Math.PI) { clearInterval(slashInterval); mechSword.rotation.y = 0; mechSword.rotation.x = Math.PI/3; }
-    }, 16);
-    const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+function fireRailgun() {
+    raycaster.setFromCamera({x: 0, y: 0}, camera);
+    const intersects = raycaster.intersectObjects(entities.map(e => e.mesh), true);
+    
+    camera.getWorldPosition(cameraWorldPos);
+    camera.getWorldDirection(cameraWorldDir);
+    const endPoint = reusableVector.copy(cameraWorldPos).add(cameraWorldDir.multiplyScalar(300));
+    let hitPoint = endPoint.clone();
+
+    // Determine impact point
+    if(intersects.length > 0) hitPoint = intersects[0].point;
+
+    // VFX: Neon Blue Beam
+    const beam = new THREE.Mesh(GEOS.beam, MATS.railgunBeam);
+    const distance = cameraWorldPos.distanceTo(hitPoint);
+    beam.position.copy(cameraWorldPos).lerp(hitPoint, 0.5);
+    beam.scale.set(0.6, distance, 0.6); // Thick beam
+    beam.lookAt(hitPoint);
+    beam.rotateX(Math.PI / 2);
+    scene.add(beam);
+    setTimeout(() => scene.remove(beam), 100);
+
+    // EXPLOSION & AOE DAMAGE
+    particleSystem.emit({ pos: hitPoint, vel: reusableVector.set(0,0,0), count: 60, life: 1.2, size: 2.0, color: new THREE.Color(0x00ffff), spread: 15 });
+    triggerScreenShake(0.3, 0.3);
+
     entities.forEach(e => {
-        if(e.faction === 'enemy' && !e.dead && e.mesh.position.distanceTo(playerObj.position) < 10) {
-            const toEnt = e.mesh.position.clone().sub(playerObj.position).normalize();
-            if(dir.dot(toEnt) > 0) e.takeDamage(CONFIG.MECH_BLADE_DMG * playerStats.damageBuff, true);
+        if(!e.dead && e.faction === 'enemy') {
+            const dist = e.mesh.position.distanceTo(hitPoint);
+            // Direct Hit or AoE
+            if (dist < 10) {
+                e.takeDamage(CONFIG.RAILGUN_DMG * playerStats.damageBuff * (dist < 3 ? 1.0 : 0.5), true);
+                e.mesh.position.y += 0.5; // Slight knockup
+            }
         }
     });
 }
 
+
 function shootProjectile(isRifle) {
     const p = getProjectile();
-    p.mesh.visible = true;
-    p.type = isRifle ? 'rifle' : 'date'; p.isPlayer = true; p.life = 2.0; p.faction = 'player';
+    p.mesh.visible = true; p.type = isRifle ? 'rifle' : 'date'; p.isPlayer = true; p.life = 2.0; p.faction = 'player';
     p.mesh.material = isRifle ? MATS.projPlayer : MATS.projDate;
     p.mesh.scale.set(0.15,0.15,0.15);
+    p.light = getProjectileLight();
+    p.light.color.set(isRifle ? 0x00ffff : 0xffd700); p.light.intensity = 5.0;
     
-    const origin = camera.getWorldPosition(new THREE.Vector3()).add(camera.getWorldDirection(new THREE.Vector3()));
-    p.mesh.position.copy(origin);
+    camera.getWorldPosition(cameraWorldPos).add(camera.getWorldDirection(cameraWorldDir));
+    p.mesh.position.copy(cameraWorldPos);
     
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera); 
-    const targetPoint = new THREE.Vector3();
+    raycaster.setFromCamera({x:0, y:0}, camera); 
+    const targetPoint = reusableVector;
     raycaster.ray.at(100, targetPoint); 
-    
-    const intersects = raycaster.intersectObjects(entities.map(e=>e.mesh));
+    const intersects = raycaster.intersectObjects(entities.map(e=>e.mesh), true);
     if(intersects.length > 0) targetPoint.copy(intersects[0].point);
 
-    const dir = new THREE.Vector3().subVectors(targetPoint, origin).normalize();
+    const dir = targetPoint.sub(cameraWorldPos).normalize();
     p.velocity.copy(dir.multiplyScalar(isRifle ? 150 : 50));
     p.active = true;
 }
@@ -1200,15 +1145,19 @@ function npcShoot(sourceEnt, targetPos) {
     const p = getProjectile();
     p.mesh.visible = true; p.type = 'npc'; p.isPlayer = false; p.life = 2.0; p.faction = sourceEnt.faction;
     p.mesh.material = sourceEnt.faction === 'enemy' ? MATS.projEnemy : MATS.projPlayer;
-    p.mesh.scale.set(0.2,0.2,0.2);
-    p.mesh.position.copy(sourceEnt.mesh.position).add(new THREE.Vector3(0,1.5,0));
-    const dir = new THREE.Vector3().subVectors(targetPos, sourceEnt.mesh.position).normalize();
-    p.velocity.copy(dir.multiplyScalar(40));
+    p.mesh.scale.set(0.25,0.25,0.25);
+    p.mesh.position.copy(sourceEnt.mesh.position).add(reusableVector.set(0,1.5,0));
+    
+    const dir = reusableVector.subVectors(targetPos, sourceEnt.mesh.position).normalize();
+    p.velocity.copy(dir.multiplyScalar(100)); 
     p.active = true;
+    p.light = getProjectileLight();
+    p.light.color.set(sourceEnt.faction === 'enemy' ? 0xff0000 : 0x00ff00);
+    p.light.intensity = 3;
 }
 
 function spawnEntity(type, origin) {
-    const pos = origin.clone().add(new THREE.Vector3((Math.random()-0.5)*10, 0, (Math.random()-0.5)*10));
+    const pos = origin.clone().add(reusableVector.set((Math.random()-0.5)*15, 0, (Math.random()-0.5)*15));
     pos.y = 0;
     let mesh, hp, maxHp, faction, name;
 
@@ -1242,84 +1191,67 @@ function animate() {
     const dt = Math.min((now - lastTime) / 1000, 0.1);
     lastTime = now;
 
-    if(cinematicMode === 'victory') { renderer.render(scene, camera); runVictoryCinematic(dt); return; }
-    if(cinematicMode === 'defeat') { renderer.render(scene, camera); runDefeatCinematic(dt); return; }
-    if(!gameActive) { renderer.render(scene, camera); return; }
+    if(cinematicMode) { composer.render(dt); if(cinematicMode === 'victory') runVictoryCinematic(dt); else if(cinematicMode === 'defeat') runDefeatCinematic(dt); return; }
+    if(!gameActive) { composer.render(dt); return; }
 
+    particleSystem.update(dt);
+    
+    // Camera Shake
+    const originalCameraX = camera.position.x;
+    const originalCameraY = camera.position.y;
+    if(cameraShake.time > 0) {
+        cameraShake.time -= dt;
+        camera.position.x += (Math.random() - 0.5) * cameraShake.intensity;
+        camera.position.y += (Math.random() - 0.5) * cameraShake.intensity;
+    }
+
+    // MOVEMENT RESET to Standard WASD
     if(playerStats.leaping === false && ascensionCinematic === 0 && interventionCinematic === 0) {
-        const fwd = new THREE.Vector3(0,0,-1).applyQuaternion(playerObj.quaternion);
-        const rgt = new THREE.Vector3(1,0,0).applyQuaternion(playerObj.quaternion);
-        fwd.y=0; fwd.normalize(); rgt.y=0; rgt.normalize();
-        const dir = new THREE.Vector3();
-        if(keys.w) dir.add(fwd); if(keys.s) dir.sub(fwd); if(keys.d) dir.add(rgt); if(keys.a) dir.sub(rgt);
-        if(dir.lengthSq()>0) playerObj.position.add(dir.normalize().multiplyScalar(CONFIG.PLAYER_SPEED * dt));
-        playerObj.position.x = Math.max(-245, Math.min(245, playerObj.position.x)); playerObj.position.z = Math.max(-245, Math.min(245, playerObj.position.z));
+        playerObj.getWorldDirection(playerFwd); 
+        playerFwd.y=0; 
+        playerFwd.normalize();
+        
+        // Compute Right vector: Cross(Up, Forward) -> If Fwd is -Z, Up is +Y, Right is -X (Left)?
+        // Let's rely on Cross(playerFwd, playerObj.up)
+        // Fwd(0,0,-1) x Up(0,1,0) = (1,0,0) -> +X is Right
+        playerRgt.crossVectors(playerFwd, playerObj.up).normalize();
+        
+        moveDir.set(0,0,0);
+        // Standard WASD
+        if(keys.w) moveDir.sub(playerFwd); // W moves Forward
+        if(keys.s) moveDir.add(playerFwd); // S moves Backward
+        if(keys.a) moveDir.add(playerRgt); // A moves Left
+        if(keys.d) moveDir.sub(playerRgt); // D moves Right
+
+        if(moveDir.lengthSq()>0) playerObj.position.add(moveDir.normalize().multiplyScalar(CONFIG.PLAYER_SPEED * dt));
+        playerObj.position.x = Math.max(-390, Math.min(390, playerObj.position.x)); playerObj.position.z = Math.max(-390, Math.min(390, playerObj.position.z));
     }
 
-    if(ascensionCinematic === 1) {
-        playerObj.position.y = THREE.MathUtils.lerp(playerObj.position.y, 0.5, dt * 2);
-        camera.rotation.z = THREE.MathUtils.lerp(camera.rotation.z, 0.3, dt * 2);
-        camera.rotation.x = THREE.MathUtils.lerp(camera.rotation.x, -0.5, dt * 2);
-    }
-    if(interventionCinematic === 1) camera.rotation.x = THREE.MathUtils.lerp(camera.rotation.x, 1.5, dt * 5);
-    else if (interventionCinematic === 2) camera.rotation.x = THREE.MathUtils.lerp(camera.rotation.x, -0.5, dt * 15);
-
-    // Ranged Failsafe (10s) - REDUCED
-    if(boss && !boss.dead && (now - boss.lastAttackTime) > 1500) {
-        boss.selectAttack();
-        boss.actionTimer = 100;
+    if(boss && !boss.dead) {
+        boss.updateAnim(dt);
+        if((now - boss.lastAttackTime) > 1500) { boss.actionTimer = 100; }
     }
 
     for(let k in playerStats.cooldowns) if(playerStats.cooldowns[k] > 0) { playerStats.cooldowns[k] -= dt * 1000; updateCooldownUI(k, playerStats.cooldowns[k], CD_MAX[k]); }
     if(playerStats.throwTimer > 0) playerStats.throwTimer -= dt * 1000;
     if(playerStats.attackTimer > 0) playerStats.attackTimer -= dt * 1000;
     if(playerStats.directHitTimer > 0) playerStats.directHitTimer -= dt * 1000;
-    
-    if(playerStats.lamentShieldTimer > 0) {
-        playerStats.lamentShieldTimer -= dt * 1000;
-        if(playerStats.lamentShieldTimer <= 0) {
-            playerStats.shield = 0; 
-            updatePlayerUI();
-        }
-    }
-    
-    if(playerStats.mechActive) {
-        playerStats.mechTimer -= dt * 1000;
-        if(playerStats.mechTimer <= 0) { playerStats.mechActive = false; mechSword.visible = false; document.getElementById('mech-indicator').style.display = 'none'; document.getElementById('mech-overlay').style.display = 'none'; }
+    if(playerStats.mechActive) { 
+        playerStats.mechTimer -= dt * 1000; 
+        if(playerStats.mechTimer <= 0) { 
+            playerStats.mechActive = false; 
+            document.getElementById('mech-indicator').style.display = 'none'; 
+            document.getElementById('mech-overlay').style.display = 'none'; 
+            weaponModels.railgun.visible = false;
+        } 
     }
     if(playerStats.buffTimer > 0) { playerStats.buffTimer -= dt * 1000; if(playerStats.buffTimer <= 0) { playerStats.damageBuff = 1.0; document.getElementById('buff-text').style.display = 'none'; } }
 
     if(boss && !boss.dead && !boss.stunTimer) { 
-        if(boss.retreatMode) {
-            boss.retreatTimer -= dt * 1000;
-            if(boss.retreatTimer <= 0) { boss.retreatMode = false; boss.shield = 0; }
-        } else {
-            // Wrath Countdown
-            if(boss.wrathCooldown > 0) {
-                boss.wrathCooldown -= dt * 1000;
-                let secs = Math.ceil(boss.wrathCooldown/1000);
-                document.getElementById('wrath-status').innerText = "WRATH BURNOUT (" + secs + "s)";
-                if(boss.wrathCooldown <= 0) {
-                    document.getElementById('wrath-status').innerText = "WRATH ACCUMULATING";
-                    document.getElementById('wrath-status').style.color = "#aaa";
-                }
-            }
-            if(boss.gloryMode) {
-                boss.gloryTimer -= dt * 1000;
-                if(boss.gloryTimer <= 0) {
-                    boss.gloryMode = false;
-                    showBanner('wrath-banner', 2000, "GLORY FADED");
-                }
-            }
-
-            boss.actionTimer -= dt * 1000;
-            if(boss.actionTimer <= 0) {
-                boss.selectAttack();
-                // SPAM MORE WHEN WRATH COOLDOWN ACTIVE
-                let baseRate = boss.wrathCooldown > 0 ? 1000 : 2000; 
-                if(boss.wrath > 50) baseRate = 1500;
-                boss.actionTimer = baseRate - (boss.stage * 200); 
-            }
+        if(boss.retreatMode) { if((boss.retreatTimer -= dt * 1000) <= 0) { boss.retreatMode = false; boss.shield = 0; } } 
+        else {
+            if(boss.gloryMode) { if((boss.gloryTimer -= dt * 1000) <= 0) boss.gloryMode = false; }
+            if((boss.actionTimer -= dt * 1000) <= 0) { boss.selectAttack(); let baseRate = 2000; if(boss.wrath > 50) baseRate = 1200; boss.actionTimer = baseRate - (boss.stage * 150); }
         }
     }
 
@@ -1327,96 +1259,51 @@ function animate() {
 
     projectilePool.forEach(p => {
         if(p.active) {
-            p.life -= dt;
-            p.mesh.position.add(p.velocity.clone().multiplyScalar(dt));
-            if(p.life <= 0) { p.active = false; p.mesh.visible = false; if(p.warningMesh){scene.remove(p.warningMesh); p.warningMesh=null;} return; }
+            p.life -= dt; p.mesh.position.add(p.velocity.clone().multiplyScalar(dt));
+            if(p.light) p.light.position.copy(p.mesh.position);
             
-            if((p.type === 'meteor_buffed' || p.type === 'meteor_normal') && p.mesh.position.y <= 0) {
-                p.active = false; p.mesh.visible = false;
-                if(p.warningMesh) { scene.remove(p.warningMesh); p.warningMesh = null; }
-                
-                const wave = new THREE.Mesh(new THREE.TorusGeometry(1, 1, 16, 100), MATS.projVoid);
-                wave.rotation.x = Math.PI/2; wave.position.copy(p.mesh.position); wave.position.y = 0; scene.add(wave);
-                
-                let s = 1; 
-                const maxRadius = 6; 
-                const wInt = setInterval(()=>{ 
-                    s+=1.0; 
-                    wave.scale.set(s,s,1); 
-                    if(s > maxRadius){ clearInterval(wInt); scene.remove(wave); } 
-                    
-                    if(playerObj.position.distanceTo(wave.position) < s && playerObj.position.distanceTo(wave.position) > s-2) damagePlayer(20);
-                    entities.forEach(e => {
-                        if(e.faction === 'ally' && e.mesh.position.distanceTo(wave.position) < s && e.mesh.position.distanceTo(wave.position) > s-2) e.takeDamage(120); // 3x DMG
-                    });
-                }, 16);
-                return;
+            if(p.type.includes('meteor') && Math.random() < 0.2) { 
+                 particleSystem.emit({ pos: p.mesh.position, vel: reusableVector.set(0,0,0), count: 1, life: 0.5, size: 2, color: new THREE.Color(0xff4400), spread: 0.2 });
             }
 
-            if(p.type === 'void_cannon') {
-                if(p.mesh.position.distanceTo(playerObj.position) < 3) { damagePlayer(CONFIG.VOID_CANNON_DMG); p.active = false; p.mesh.visible = false; }
-                entities.forEach(e => {
-                     if(e.faction === 'ally' && e.mesh.position.distanceTo(p.mesh.position) < 3) {
-                         e.takeDamage(300); p.active = false; p.mesh.visible = false; // 3x DMG
-                     }
-                });
+            if(p.life <= 0) { p.active = false; p.mesh.visible = false; if(p.warningMesh){scene.remove(p.warningMesh); p.warningMesh=null;} return; }
+            if((p.type === 'meteor_buffed' || p.type === 'meteor_normal') && p.mesh.position.y <= 0) {
+                p.active = false; p.mesh.visible = false; if(p.warningMesh) { scene.remove(p.warningMesh); p.warningMesh = null; }
+                triggerScreenShake(0.4, 0.4);
+                particleSystem.emit({ pos: p.mesh.position, vel: reusableVector.set(0,1,0), count: 50, life: 2, size: 1.5, color: new THREE.Color(p.type === 'meteor_buffed' ? 0xff4400 : 0x800080), spread: 15 });
                 return;
             }
 
             let hit = false;
             if(p.isPlayer) {
-                entities.forEach(e => {
-                    if(e.faction === 'enemy' && !e.dead && p.mesh.position.distanceTo(e.mesh.position.clone().add(new THREE.Vector3(0,2,0))) < 3.0) {
+                for(const e of entities) {
+                    if(e.faction === 'enemy' && !e.dead && p.mesh.position.distanceTo(e.mesh.position.clone().add(reusableVector.set(0,2,0))) < 3.0) {
                         hit = true;
                         if(p.type === 'rifle') e.takeDamage(CONFIG.RIFLE_DMG * playerStats.damageBuff, true); 
                         else e.takeDamage(50 * playerStats.damageBuff, true);
+                        break;
                     }
-                });
-            } else if (p.faction === 'ally') {
-                entities.forEach(e => {
-                    if(e.faction === 'enemy' && !e.dead && p.mesh.position.distanceTo(e.mesh.position.clone().add(new THREE.Vector3(0,2,0))) < 3.0) {
-                        hit = true;
-                        e.takeDamage(30 * playerStats.damageBuff, false);
-                    }
-                });
-            } else if (p.faction === 'enemy') {
-                if(p.mesh.position.distanceTo(playerObj.position.clone().add(new THREE.Vector3(0,1,0))) < 1.0) { hit = true; damagePlayer(5); }
-                entities.forEach(e => { if(e.faction === 'ally' && !e.dead && p.mesh.position.distanceTo(e.mesh.position.clone().add(new THREE.Vector3(0,1,0))) < 2.0) { hit = true; e.takeDamage(45, false); } }); // 3x
+                }
+            } else {
+                if(p.mesh.position.distanceTo(playerObj.position.clone().add(reusableVector.set(0,1,0))) < 1.0) { hit = true; damagePlayer(15); }
+                else {
+                    for(const e of entities) { if(e.faction === 'ally' && !e.dead && p.mesh.position.distanceTo(e.mesh.position.clone().add(reusableVector.set(0,1,0))) < 2.0) { hit = true; e.takeDamage(60, false); break;} }
+                }
             }
-            if(hit) { p.active = false; p.mesh.visible = false; }
+            if(hit) { p.active = false; p.mesh.visible = false; particleSystem.emit({ pos: p.mesh.position, vel: reusableVector.set(0,0,0), count: 10, life: 0.5, size: 0.8, color: p.mesh.material.emissive, spread: 5 }); }
         }
     });
 
     for(let i=entities.length-1; i>=0; i--) {
         const ent = entities[i];
         if(ent.dead) { entities.splice(i, 1); continue; }
-        if(ent.kneeling) continue; 
-        if(ent.stunTimer > 0) { ent.stunTimer -= dt * 1000; ent.mesh.position.x += (Math.random()-0.5)*0.1; continue; }
+        if(ent.kneeling || ent.stunTimer > 0) { if(ent.stunTimer > 0) ent.stunTimer -= dt*1000; continue; }
 
-        let target = playerObj.position;
-        let targetEnt = null;
-
+        let target = playerObj.position; let targetEnt = null;
         if(ent.faction === 'enemy') {
             let closest = 999; let allyTarget = null;
-            entities.forEach(e => { if(e.faction === 'ally' && ent.mesh.position.distanceTo(e.mesh.position) < 60 && ent.mesh.position.distanceTo(e.mesh.position) < closest) { closest = ent.mesh.position.distanceTo(e.mesh.position); allyTarget = e; } });
+            entities.forEach(e => { if(e.faction === 'ally' && ent.mesh.position.distanceTo(e.mesh.position) < closest) { closest = ent.mesh.position.distanceTo(e.mesh.position); allyTarget = e; } });
             if(allyTarget) { target = allyTarget.mesh.position; targetEnt = allyTarget; }
-            else if(ent.name === 'Lord Sultan') {
-                 let bestTgt = playerObj; 
-                 let minD = playerObj.position.distanceTo(ent.mesh.position);
-                 entities.forEach(e => {
-                     if(e.faction === 'ally' && e.mesh.position.distanceTo(ent.mesh.position) < minD) {
-                         minD = e.mesh.position.distanceTo(ent.mesh.position); bestTgt = e;
-                     }
-                 });
-                 boss.target = bestTgt;
-                 if(bestTgt !== playerObj) { target = bestTgt.mesh.position; targetEnt = bestTgt; }
-                 
-                 if(ent.mesh.position.distanceTo(boss.lastPos) < 0.5) {
-                     boss.stuckTimer += dt;
-                     if(boss.stuckTimer > 1.0) { boss.stuckTimer = 0; boss.actionTimer = 0; }
-                 } else { boss.stuckTimer = 0; }
-                 boss.lastPos.copy(ent.mesh.position);
-            }
         } else {
             let closest = 999; let enTarget = null;
             entities.forEach(e => { if(e.faction === 'enemy' && ent.mesh.position.distanceTo(e.mesh.position) < closest) { closest = ent.mesh.position.distanceTo(e.mesh.position); enTarget = e; } });
@@ -1424,97 +1311,65 @@ function animate() {
         }
 
         const dist = ent.mesh.position.distanceTo(target);
-        let stopDist = (ent.name === 'Soldier' || ent.name === 'Elite') ? 15 : 2;
-        if(ent.name === 'Lord Sultan') stopDist = 8; 
-
-        if(ent.name === 'Void Twin' && dist < 20) {
-            ent.leapTimer -= dt;
-            if(ent.leapTimer <= 0) {
-                 ent.leapTimer = 3.0; 
-                 const lStart = ent.mesh.position.clone();
-                 const lEnd = target.clone();
-                 let lf = 0;
-                 const lInt = setInterval(() => {
-                     lf += 0.05;
-                     ent.mesh.position.lerpVectors(lStart, lEnd, lf);
-                     ent.mesh.position.y = Math.sin(lf * Math.PI) * 10;
-                     if(lf >= 1) { 
-                        clearInterval(lInt); ent.mesh.position.y = 0; 
-                        if(targetEnt) targetEnt.takeDamage(150);
-                        if(ent.mesh.position.distanceTo(playerObj.position) < 5) damagePlayer(30);
-                     }
-                 }, 16);
-            }
-        }
+        let stopDist = (ent.name === 'Soldier' || ent.name === 'Elite') ? 30 : 2; // Minions engage from further
+        if(ent.name === 'Lord Sultan') stopDist = 12; 
 
         if(dist > stopDist) {
-            let speed = (ent.name === 'Lord Sultan') ? CONFIG.BOSS_SPEED : 5;
-            if(ent.name === 'Lord Sultan' && boss.gloryMode) speed *= 1.3; 
-            if(ent.name === 'Void Twin') speed = 8;
-
-            const move = new THREE.Vector3().subVectors(target, ent.mesh.position).normalize(); move.y = 0;
+            let speed = (ent.name === 'Lord Sultan') ? CONFIG.BOSS_SPEED : 9; // Buffed minion speed
+            const move = reusableVector.subVectors(target, ent.mesh.position).normalize(); move.y = 0;
             ent.mesh.position.add(move.multiplyScalar(speed * dt));
             ent.mesh.lookAt(target.x, ent.mesh.position.y, target.z);
-            
-            ent.bobOffset += dt * 10;
-            if(ent.mesh.userData.animType === 'chimp') { 
-                ent.mesh.children[2].position.y = 1.4 + Math.sin(ent.bobOffset)*0.2; 
-            } else { 
-                ent.mesh.children[3].rotation.x = Math.sin(ent.bobOffset); 
-                ent.mesh.children[4].rotation.x = Math.cos(ent.bobOffset); 
-                ent.mesh.children[5].rotation.x = -Math.sin(ent.bobOffset); 
-                ent.mesh.children[6].rotation.x = -Math.cos(ent.bobOffset); 
-            }
-        } else ent.mesh.lookAt(target.x, ent.mesh.position.y, target.z);
-
-        if(ent.name === 'Lord Sultan' && dist > 15 && boss.actionTimer > 500) {
-             // Keep walking
-        }
-
-        if(ent.name === 'Soldier' || ent.name === 'Elite') {
-            ent.attackTimer = (ent.attackTimer || 0) - dt * 1000;
-            if(ent.attackTimer <= 0 && dist < 45) { npcShoot(ent, target); ent.attackTimer = 2000; }
-        } else if(dist < 10) { // HITBOX FIX: Hits anything within 10 units
-            ent.swingArm(); 
-            let dmg = 10;
-            if(ent.name === 'Lord Sultan') dmg = CONFIG.BOSS_DMG;
-            if(ent.name === 'Lord Sultan' && boss.gloryMode) dmg *= 1.5; 
-            if(ent.name === 'Void Twin') dmg = 25;
-            
-            if(ent.faction === 'enemy') {
-                if(targetEnt) targetEnt.takeDamage(dmg * dt * 5 * 3, false); // 3x vs NPC
-                else if(target.equals(playerObj.position) && dist < 5) damagePlayer(dmg * dt * 3); // Player needs to be closer
-            } else { 
-                if(targetEnt) targetEnt.takeDamage(dmg * dt * 5, false);
+        } else {
+            ent.mesh.lookAt(target.x, ent.mesh.position.y, target.z);
+             if(ent.name === 'Soldier' || ent.name === 'Elite') {
+                ent.attackTimer = (ent.attackTimer || 0) - dt * 1000;
+                // Minion Buff: Fire much faster (800ms vs 2000ms)
+                if(ent.attackTimer <= 0 && dist < 100) { npcShoot(ent, target); ent.attackTimer = 800; }
+            } else if (dist < 5){
+                let dmg = (ent.name === 'Lord Sultan') ? CONFIG.BOSS_DMG : 25; // Buffed melee dmg
+                if(ent.faction === 'enemy') { if(targetEnt) targetEnt.takeDamage(dmg * dt * 5, false); else if(dist < 5) damagePlayer(dmg * dt * 3); } 
+                else { if(targetEnt) targetEnt.takeDamage(dmg * dt * 5, false); }
             }
         }
     }
-    renderer.render(scene, camera);
+    composer.render(dt);
+    if(cameraShake.time > 0) {
+        camera.position.x = originalCameraX;
+        camera.position.y = originalCameraY;
+    }
 }
 
 function createChimpMesh(isBoss) {
     const group = new THREE.Group(); group.userData.animType='chimp'; const scale=isBoss?2.5:1.0; group.scale.set(scale,scale,scale);
-    const t=new THREE.Mesh(GEOS.cyl,MATS.bossFur); t.scale.set(0.55, 1.4, 0.55); t.position.y=0.9; t.rotation.x=0.6; group.add(t); 
-    if(isBoss){const h=new THREE.Mesh(GEOS.sphere,MATS.bossFur); h.scale.set(0.5,0.4,0.6); h.position.set(0,1.5,-0.3); h.rotation.x=0.4; group.add(h);} 
+    const t=new THREE.Mesh(GEOS.cyl,MATS.bossFur); t.scale.set(0.55, 1.4, 0.55); t.position.y=0.9; group.add(t); 
     const hd=new THREE.Mesh(GEOS.sphere,MATS.bossSkin); hd.scale.set(0.35,0.35,0.35); hd.position.set(0,1.4,0.7); group.add(hd); 
-    const eye=new THREE.Mesh(new THREE.SphereGeometry(0.05), new THREE.MeshBasicMaterial({color:0xff0000})); const le=eye.clone(); le.position.set(-0.12,1.45,1.0); group.add(le); const re=eye.clone(); re.position.set(0.12,1.45,1.0); group.add(re); 
-    const arm=new THREE.Mesh(new THREE.BoxGeometry(0.15,1.5,0.15), MATS.bossFur); const la=arm.clone(); la.position.set(-0.65,0.8,0.4); group.add(la); const ra=arm.clone(); ra.position.set(0.65,0.8,0.4); group.add(ra); 
+    const eye=new THREE.Mesh(new THREE.SphereGeometry(0.05), new THREE.MeshBasicMaterial({color:0xff0000, emissive: 0xff0000})); const le=eye.clone(); le.position.set(-0.12,1.45,1.0); group.add(le); const re=eye.clone(); re.position.set(0.12,1.45,1.0); group.add(re); 
+    
+    // Arms for animation
+    const armGeo=new THREE.BoxGeometry(0.15,1.5,0.15);
+    
+    const laGroup = new THREE.Group(); laGroup.position.set(-0.65,1.3,0.4); laGroup.name = 'leftArm';
+    const la=new THREE.Mesh(armGeo, MATS.bossFur); la.position.y = -0.75; 
+    laGroup.add(la); group.add(laGroup);
+    
+    const raGroup = new THREE.Group(); raGroup.position.set(0.65,1.3,0.4); raGroup.name = 'rightArm';
+    const ra=new THREE.Mesh(armGeo, MATS.bossFur); ra.position.y = -0.75; 
+    raGroup.add(ra); group.add(raGroup);
+    
     const leg=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.7,0.22), MATS.bossFur); const ll=leg.clone(); ll.position.set(-0.25,0.35,0); group.add(ll); const rl=leg.clone(); rl.position.set(0.25,0.35,0); group.add(rl); 
     return group;
 }
 
 function createHumanoidMesh(mat,isBeast) {
-    const g=new THREE.Group(); g.userData.animType='humanoid';
-    const bg=isBeast?GEOS.cyl:GEOS.box; 
-    const b=new THREE.Mesh(bg,mat); if(isBeast) b.scale.set(0.5,1.2,0.5); else b.scale.set(0.6,1.0,0.3); b.position.y=1.0; g.add(b); 
+    const g=new THREE.Group();
+    const b=new THREE.Mesh(isBeast?GEOS.cyl:GEOS.box,mat); if(isBeast) b.scale.set(0.5,1.2,0.5); else b.scale.set(0.6,1.0,0.3); b.position.y=1.0; g.add(b); 
     const h=new THREE.Mesh(GEOS.sphere,mat); h.scale.set(0.3,0.3,0.3); h.position.y=1.7; g.add(h); 
-    const e=new THREE.Mesh(new THREE.SphereGeometry(0.05),MATS.white); e.position.set(0.1,1.75,0.25); g.add(e); 
     const arm=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.8,0.15), mat); const la=arm.clone(); la.position.set(-0.45,1.1,0); g.add(la); const ra=arm.clone(); ra.position.set(0.45,1.1,0); g.add(ra); 
     const leg=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.9,0.18), mat); const ll=leg.clone(); ll.position.set(-0.2,0.45,0); g.add(ll); const rl=leg.clone(); rl.position.set(0.2,0.45,0); g.add(rl); 
     return g;
 }
 
-function updateBossUI(dr) { if(!boss) return; const hpPct = (boss.hp / boss.maxHp) * 100; const shPct = Math.min(100, (boss.shield / boss.maxHp) * 100); document.getElementById('boss-hp-fill').style.width = hpPct + '%'; document.getElementById('boss-shield-fill').style.width = shPct + '%'; document.getElementById('boss-wrath-fill').style.width = boss.wrath + '%'; }
+function updateBossUI() { if(!boss) return; const hpPct = (boss.hp / boss.maxHp) * 100; const shPct = Math.min(100, (boss.shield / boss.maxHp) * 100); document.getElementById('boss-hp-fill').style.width = hpPct + '%'; document.getElementById('boss-shield-fill').style.width = shPct + '%'; document.getElementById('boss-wrath-fill').style.width = boss.wrath + '%'; }
 function updatePlayerUI() { document.getElementById('p-hp-fill').style.width = playerStats.hp + '%'; document.getElementById('p-shield-fill').style.width = playerStats.shield + '%'; document.getElementById('ammo-val').innerText = playerStats.rifleAmmo; }
 function triggerCooldownUI(key) { const el = document.getElementById('cd-'+key); el.style.height = '100%'; document.getElementById('ab-'+key).classList.remove('ready'); }
 function updateCooldownUI(key, current, max) { const el = document.getElementById('cd-'+key); const pct = (current / max) * 100; el.style.height = pct + '%'; if(pct <= 0) document.getElementById('ab-'+key).classList.add('ready'); }
