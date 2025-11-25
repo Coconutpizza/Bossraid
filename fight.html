@@ -131,14 +131,14 @@ const CONFIG = {
     PLAYER_MAX_HP: 100,
     PLAYER_SPEED: 12.0, // Slight speed buff for better control feel
     BOSS_SPEED: 14.0, 
-    BOSS_DMG: 45, 
+    BOSS_DMG: 85, 
     RIFLE_DMG: 85, RIFLE_RATE: 90, 
     DIRECT_HIT_DMG: 3000, DIRECT_HIT_CD: 1000,
     // Minion Stats
-    TWIN_HP: 350, VOID_TWIN_HP: 800, ELITE_HP: 700, TITAN_HP: 2500, FOOTMAN_HP: 450, 
+    TWIN_HP: 650, VOID_TWIN_HP: 1000, ELITE_HP: 1700, TITAN_HP: 4500, FOOTMAN_HP: 650, 
     ALLY_HP: 400, GUARDIAN_HP: 1200,
     THROW_CD: 300, MECH_CD: 40000, MECH_DURATION: 12000,
-    LAMENT_DMG: 45, RAILGUN_DMG: 1500, RAILGUN_CD: 1200, MECH_SHIELD: 400,
+    LAMENT_DMG: 45, RAILGUN_DMG: 1500, RAILGUN_CD: 1200, MECH_SHIELD: 250,
     VOID_CANNON_DMG: 120
 };
 
@@ -586,13 +586,19 @@ class BossEntity extends Entity {
         switch(this.stage) {
             case 2: msg = "STAGE 2: dynasty"; this.summonStage2Units(); break;
             case 3: msg = "STAGE 3: Pizza Salvatore"; spawnEntity('titan', this.mesh.position); spawnEntity('titan', this.mesh.position); document.getElementById('ab-4').style.display = 'flex'; break;
-            case 4: msg = "STAGE 4: Fart attack"; this.attackMeteorRain(); break;
-            case 5: msg = "STAGE 5: The Sultan make the rules"; 
-                this.hp += this.maxHp * 1.50; 
+            case 4: msg = "STAGE 4: Fart attack";
+                this.attackMeteorRain();
+                this.attackCataclysm();
+                break;
+            case 5: msg = "STAGE 5: The Sultan makes the rules. Kneel to Morroco"; 
+                this.hp += this.maxHp * 1.00; 
                 this.shield += this.maxHp * 1.0; 
                 this.attackCataclysm(); 
                 this.summonStage2Units(); 
                 this.summonStage2Units();
+                this.attackCataclysm(); 
+                this.attackCataclysm();
+                this.attackCataclysm();
                 break;
         }
         showBanner('stage-banner', 4000, msg);
@@ -690,6 +696,8 @@ class BossEntity extends Entity {
         }, 16);
     }
 
+
+    
     attackCataclysm() {
         showBanner('wrath-banner', 4000, "Crashout");
         this.setAnim('spin');
@@ -697,6 +705,11 @@ class BossEntity extends Entity {
         setTimeout(() => this.attackMultiBeam(), 2000);
         setTimeout(() => this.attackSpikes(), 3000);
         setTimeout(() => this.activateMoroccoRage(), 5000);
+        setTimeout(() => this.fireVoidCannon(), 6000);
+        setTimeout(() => this.attackMultiBeam(), 7000);
+        setTimeout(() => this.attackVoidBomb(), 8000);
+        
+        
     }
 
     attackGrandSlam() {
