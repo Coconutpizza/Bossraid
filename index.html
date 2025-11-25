@@ -89,7 +89,7 @@
             </div>
         </div>
         <div id="ammo-counter">RIFLE: <span id="ammo-val">--</span></div>
-        <div id="mech-indicator">SHIELDED</div>
+        <div id="mech-indicator">SHIELDED, RIFLE DISABLED, MELEE ONLY</div>
         <div id="buff-text" style="display:none; color: #ffd700; font-weight: bold; font-size: 20px; text-shadow: 0 0 10px yellow;">Sultan sacrifice</div>
     </div>
 
@@ -100,7 +100,7 @@
         <div class="ability-box" id="ab-f"><span class="key-bind">F</span>💀<div class="cooldown-overlay" id="cd-f"></div></div>
         <div class="ability-box" id="ab-e"><span class="key-bind">E</span>🤖<div class="cooldown-overlay" id="cd-e"></div></div>
         <div class="ability-box" id="ab-shift"><span class="key-bind">SHFT</span>🚀<div class="cooldown-overlay" id="cd-shift"></div></div>
-        <div class="ability-box ascend" id="ab-4"><span class="key-bind">4</span>✝️</div>
+        <div class="ability-box ascend" id="ab-4"><span class="key-bind">4</span>𝓓𝓲𝓭𝓭𝔂 𝓽𝓲𝓶𝓮👅</div>
     </div>
 
     <div id="lament-banner" class="banner">give me a piece</div>
@@ -391,7 +391,7 @@ class BossEntity extends Entity {
             this.wrath = 0; 
             this.attackCataclysm();
             this.wrathTriggers = {};
-            this.wrathCooldown = 30000; 
+            this.wrathCooldown = 3000; 
             updateBossUI();
         } else {
             this.checkWrathThresholds();
@@ -1262,9 +1262,9 @@ function animate() {
     else if (interventionCinematic === 2) camera.rotation.x = THREE.MathUtils.lerp(camera.rotation.x, -0.5, dt * 15);
 
     // Ranged Failsafe (10s) - REDUCED
-    if(boss && !boss.dead && (now - boss.lastAttackTime) > 3000) {
+    if(boss && !boss.dead && (now - boss.lastAttackTime) > 1500) {
         boss.selectAttack();
-        boss.actionTimer = 500;
+        boss.actionTimer = 100;
     }
 
     for(let k in playerStats.cooldowns) if(playerStats.cooldowns[k] > 0) { playerStats.cooldowns[k] -= dt * 1000; updateCooldownUI(k, playerStats.cooldowns[k], CD_MAX[k]); }
@@ -1313,7 +1313,7 @@ function animate() {
             if(boss.actionTimer <= 0) {
                 boss.selectAttack();
                 // SPAM MORE WHEN WRATH COOLDOWN ACTIVE
-                let baseRate = boss.wrathCooldown > 0 ? 2000 : 3000; 
+                let baseRate = boss.wrathCooldown > 0 ? 1000 : 2000; 
                 if(boss.wrath > 50) baseRate = 1500;
                 boss.actionTimer = baseRate - (boss.stage * 200); 
             }
