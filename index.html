@@ -136,10 +136,10 @@ const CONFIG = {
     BOSS_DMG: 35, 
     RIFLE_DMG: 75, RIFLE_RATE: 100, 
     DIRECT_HIT_DMG: 2500, DIRECT_HIT_CD: 1000,
-    TWIN_HP: 200, VOID_TWIN_HP: 600, ELITE_HP: 300, TITAN_HP: 1500, FOOTMAN_HP: 120, ALLY_HP: 400, GUARDIAN_HP: 1000,
+    TWIN_HP: 200, VOID_TWIN_HP: 600, ELITE_HP: 500, TITAN_HP: 2000, FOOTMAN_HP: 320, ALLY_HP: 400, GUARDIAN_HP: 1200,
     THROW_CD: 300, MECH_CD: 40000, MECH_DURATION: 10000,
-    LAMENT_DMG: 40, MECH_BLADE_DMG: 80, MECH_BLADE_RATE: 500, MECH_SHIELD: 300,
-    VOID_CANNON_DMG: 60
+    LAMENT_DMG: 45, MECH_BLADE_DMG: 80, MECH_BLADE_RATE: 500, MECH_SHIELD: 300,
+    VOID_CANNON_DMG: 90
 };
 
 const GEOS = {
@@ -981,6 +981,7 @@ function handleAbilityInput(k) {
     
     if(k === '1' && playerStats.cooldowns['1'] <= 0) {
         playerStats.shield += 70;
+        playerStats.health += 30;
         spawnEntity('guardian', playerObj.position);
         const beam = new THREE.Mesh(GEOS.beam, MATS.beamWarn);
         beam.scale.set(2, 50, 2); beam.position.copy(playerObj.position);
