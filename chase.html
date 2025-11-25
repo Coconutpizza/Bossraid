@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lord Hilali: Locked In</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Courier New', Courier, monospace; user-select: none; }
+        
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        #hud {
+            padding: 20px; color: #ffd700;
+            font-weight: bold; font-size: 20px;
+            display: flex; justify-content: space-between;
+            text-shadow: 1px 1px 0 #000;
+            z-index: 5;
+        }
+
+        .hud-item { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; }
+        #huzz-status { color: #ff69b4; } 
+
+        #crosshair {
+            position: absolute; top: 50%; left: 50%;
+            width: 6px; height: 6px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #000;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Banners */
+        .banner {
+            position: absolute; width: 100%; text-align: center;
+            opacity: 0; transform: scale(0.5);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none; text-shadow: 2px 2px 0 #000;
+        }
+        .banner.active { opacity: 1; transform: scale(1); }
+
+        #locked-banner {
+            top: 20%; font-size: 50px; font-weight: 900; color: #ff0000;
+            text-shadow: 0 0 15px #ff0000; letter-spacing: 3px;
+        }
+
+        #gassy-banner {
+            top: 60%; font-size: 30px; font-weight: bold; color: #00ff00;
+        }
+
+        #roar-banner {
+            top: 40%; font-size: 60px; font-weight: 900; color: #006233;
+            text-shadow: 3px 3px 0 #c1272d, 0 0 20px #fff;
+            letter-spacing: 5px;
+        }
+
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(20, 20, 20, 0.95);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; pointer-events: auto;
+            z-index: 10;
+        }
+
+        h1 { color: #d4af37; margin-bottom: 10px; text-transform: uppercase; font-size: 40px; text-align: center;}
+        p { font-size: 18px; color: #ddd; max-width: 600px; text-align: center; line-height: 1.5; margin: 5px 0; }
+        .key { color: #d4af37; border: 1px solid #d4af37; padding: 2px 6px; border-radius: 4px; }
+        
+        button {
+            margin-top: 30px; padding: 15px 40px; font-size: 20px;
+            background: #d4af37; border: none; cursor: pointer; color: #000;
+            font-weight: bold; text-transform: uppercase;
+            box-shadow: 0 0 15px #d4af37; transition: transform 0.2s;
+        }
+        button:hover { transform: scale(1.1); background: #f1c40f; }
+    </style>
+</head>
+<body>
+
+<div id="ui-layer">
+    <div id="hud">
+        <div class="hud-item">TIME: <span id="timer">0.0</span>s</div>
+        <div class="hud-item" id="huzz-status">HUZZ: READY [E]</div>
+        <div class="hud-item">DATES: <span id="ammo">READY</span></div>
+    </div>
+    
+    <div id="locked-banner" class="banner">LORD HILALI IS LOCKED IN</div>
+    <div id="roar-banner" class="banner">GLORY TO MOROCCO</div>
+    <div id="gassy-banner" class="banner">LORD HILALI TAKES A GASSY BREAK</div>
+    
+    <div id="crosshair"></div>
+</div>
+
+<div id="overlay">
+    <h1>Lord Hilali's Domain</h1>
+    <p>He is hungry. He is fast.</p>
+    <br>
+    <p><span class="key">L-CLICK</span> Throw Dates.</p>
+    <p>Every 3 dates: <strong>Gassy Break</strong> (Stops briefly).</p>
+    <p>Every 5 dates: <strong>LOCKED IN</strong> (He ignores distractions).</p>
+    <p><span class="key">E</span> Deploy <strong>HUZZ</strong> (Distracts him if not Locked In).</p>
+    <button id="start-btn">ENTER THE MIST</button>
+</div>
+
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+    }
+  }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+
+    // --- Game Constants ---
+    const PLAYER_SPEED = 8.0;
+    const BOSS_SPEED = 11.0; 
+    const TWIN_SPEED = 12.0;
+    const ENRAGE_SPEED_MULT = 1.4;
+    
+    const EAT_DURATION_BOSS = 1500;
+    const EAT_DURATION_TWIN = 3000; // Twins get distracted longer
+    const FART_DURATION = 2000;
+    const LOCKED_IN_DURATION = 7000;
+    
+    const THROW_COOLDOWN = 1000; 
+    const HUZZ_COOLDOWN = 11000; 
+    const HUZZ_DURATION = 10000;  
+    const ROAR_INTERVAL = 20000;
+
+    // --- Globals ---
+    let camera, scene, renderer;
+    let player;
+    let enemies = [];
+    let offerings = [];
+    let activeHuzz = null; 
+    
+    let lastTime = performance.now();
+    let gameActive = false;
+    let survivalTime = 0;
+    
+    // Timers
+    let roarTimer = ROAR_INTERVAL;
+    let huzzTimer = 0; 
+    let throwTimer = 0;
+    let enrageTimer = 0;
+
+    // Controls
+    const keys = { w: false, a: false, s: false, d: false };
+
+    // UI
+    const uiTimer = document.getElementById('timer');
+    const uiAmmo = document.getElementById('ammo');
+    const uiHuzz = document.getElementById('huzz-status');
+    const bnrLocked = document.getElementById('locked-banner');
+    const bnrRoar = document.getElementById('roar-banner');
+    const bnrGassy = document.getElementById('gassy-banner');
+    const overlay = document.getElementById('overlay');
+    const startBtn = document.getElementById('start-btn');
+
+    init();
+    animate();
+
+    function init() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x222222); 
+        scene.fog = new THREE.FogExp2(0x222222, 0.015); 
+
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        document.body.appendChild(renderer.domElement);
+
+        const ambient = new THREE.AmbientLight(0xffffff, 0.7); 
+        scene.add(ambient);
+        
+        const flashlight = new THREE.SpotLight(0xffffe0, 3.0);
+        flashlight.position.set(0, 2, 0);
+        flashlight.angle = Math.PI / 3; 
+        flashlight.penumbra = 0.2;
+        flashlight.decay = 1.5;
+        flashlight.distance = 80;
+        flashlight.castShadow = true;
+        camera.add(flashlight);
+        flashlight.target = camera; 
+
+        createEnvironment();
+
+        player = new THREE.Object3D();
+        player.position.set(0, 1.7, 0);
+        player.add(camera);
+        scene.add(player);
+
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.key.toLowerCase() === 'e') deployHuzz();
+        });
+        document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+        
+        document.addEventListener('mousemove', (e) => {
+            if (document.pointerLockElement === document.body) {
+                player.rotation.y -= e.movementX * 0.002;
+                camera.rotation.x -= e.movementY * 0.002;
+                camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
+            }
+        });
+
+        document.addEventListener('mousedown', (e) => {
+            if (document.pointerLockElement === document.body) {
+                if(e.button === 0) throwOffering();
+                if(e.button === 1) deployHuzz(); 
+            }
+        });
+
+        startBtn.addEventListener('click', () => {
+            document.body.requestPointerLock();
+            startGame();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    }
+
+    function createEnvironment() {
+        const floorGeo = new THREE.PlaneGeometry(300, 300, 60, 60);
+        const posAttribute = floorGeo.attributes.position;
+        for (let i = 0; i < posAttribute.count; i++) {
+            posAttribute.setZ(i, Math.random() * 1.5);
+        }
+        floorGeo.computeVertexNormals();
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const colGeo = new THREE.CylinderGeometry(0.6, 1.5, 12, 7);
+        const colMat = new THREE.MeshStandardMaterial({ color: 0x222 });
+        for(let i=0; i<50; i++) {
+            const mesh = new THREE.Mesh(colGeo, colMat);
+            const a = Math.random() * Math.PI * 2;
+            const r = 25 + Math.random() * 110;
+            mesh.position.set(Math.cos(a)*r, 6, Math.sin(a)*r);
+            scene.add(mesh);
+        }
+    }
+
+    function deployHuzz() {
+        if (!gameActive || huzzTimer > 0 || activeHuzz) return;
+
+        huzzTimer = HUZZ_COOLDOWN; 
+
+        const huzzGeo = new THREE.Group();
+        const matPink = new THREE.MeshStandardMaterial({ color: 0xff69b4, roughness: 0.2 });
+        const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 1.2, 4, 8), matPink);
+        body.position.y = 1;
+        huzzGeo.add(body);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), matPink);
+        head.position.y = 1.8;
+        huzzGeo.add(head);
+
+        const spawnPos = player.position.clone();
+        const dir = new THREE.Vector3(0,0,-1).applyQuaternion(player.quaternion);
+        spawnPos.add(dir.multiplyScalar(2));
+        spawnPos.y = 0;
+        huzzGeo.position.copy(spawnPos);
+        
+        scene.add(huzzGeo);
+
+        activeHuzz = {
+            mesh: huzzGeo,
+            life: HUZZ_DURATION,
+        };
+    }
+
+    // --- Enemy Logic ---
+    function createChimpMesh(isBoss) {
+        const group = new THREE.Group();
+        const scale = isBoss ? 1.4 : 1.0;
+        group.scale.set(scale, scale, scale);
+
+        const furColor = isBoss ? 0x4a3b2a : 0x1a1a1a; 
+        const matFur = new THREE.MeshStandardMaterial({ color: furColor });
+        const matSkin = new THREE.MeshStandardMaterial({ color: 0xe0d5c1 });
+
+        // Hunchback
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.45, 1.4, 8), matFur);
+        torso.position.y = 0.9; torso.rotation.x = 0.6; group.add(torso);
+
+        const hump = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), matFur);
+        hump.scale.set(1, 0.8, 1.2); hump.position.set(0, 1.5, -0.3); hump.rotation.x = 0.4; group.add(hump);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), matSkin);
+        head.position.set(0, 1.4, 0.7); group.add(head); // index 2
+
+        // Eyes
+        const eyeColor = isBoss ? 0x000000 : 0xff0000;
+        const matEye = new THREE.MeshBasicMaterial({ color: eyeColor });
+        const le = new THREE.Mesh(new THREE.SphereGeometry(0.05), matEye); le.position.set(-0.12, 1.45, 1.0);
+        const re = new THREE.Mesh(new THREE.SphereGeometry(0.05), matEye); re.position.set(0.12, 1.45, 1.0);
+        group.add(le); group.add(re);
+
+        // Arms
+        const armGeo = new THREE.BoxGeometry(0.15, 1.5, 0.15);
+        const la = new THREE.Mesh(armGeo, matFur); la.position.set(-0.65, 0.8, 0.4); la.rotation.z = 0.1; la.rotation.x = -0.3;
+        const ra = new THREE.Mesh(armGeo, matFur); ra.position.set(0.65, 0.8, 0.4); ra.rotation.z = -0.1; ra.rotation.x = -0.3;
+        group.add(la); group.add(ra);
+
+        const legGeo = new THREE.BoxGeometry(0.22, 0.7, 0.22);
+        const ll = new THREE.Mesh(legGeo, matFur); ll.position.set(-0.25, 0.35, 0);
+        const rl = new THREE.Mesh(legGeo, matFur); rl.position.set(0.25, 0.35, 0);
+        group.add(ll); group.add(rl);
+
+        group.traverse(o => { if(o.isMesh) o.castShadow = true; });
+        return group;
+    }
+
+    function spawnEnemy(isBoss, pos) {
+        const mesh = createChimpMesh(isBoss);
+        mesh.position.copy(pos);
+        scene.add(mesh);
+
+        enemies.push({
+            mesh: mesh,
+            isBoss: isBoss,
+            baseSpeed: isBoss ? BOSS_SPEED : TWIN_SPEED,
+            datesEaten: 0,
+            
+            // Timers
+            eatTimer: 0,
+            fartTimer: 0,
+            lockedInTimer: 0,
+            
+            bobOffset: Math.random() * 10
+        });
+    }
+
+    function activateRoar() {
+        bnrRoar.classList.add('active');
+        setTimeout(() => bnrRoar.classList.remove('active'), 4500);
+
+        enrageTimer = 5000; 
+        
+        const boss = enemies.find(e => e.isBoss);
+        if (boss) {
+            for(let i=0; i<2; i++) {
+                const offset = new THREE.Vector3((Math.random()-0.5)*8, 0, (Math.random()-0.5)*8);
+                const spawnPos = boss.mesh.position.clone().add(offset);
+                spawnEnemy(false, spawnPos);
+            }
+        }
+    }
+
+    function startGame() {
+        gameActive = true;
+        survivalTime = 0;
+        roarTimer = ROAR_INTERVAL; 
+        player.position.set(0, 1.7, 0);
+        huzzTimer = 0;
+        
+        enemies.forEach(e => scene.remove(e.mesh));
+        enemies = [];
+        offerings.forEach(o => scene.remove(o.mesh));
+        offerings = [];
+        
+        if(activeHuzz) {
+            scene.remove(activeHuzz.mesh);
+            activeHuzz = null;
+        }
+
+        spawnEnemy(true, new THREE.Vector3(0, 0, -50));
+
+        overlay.style.display = 'none';
+        lastTime = performance.now();
+    }
+
+    function gameOver() {
+        gameActive = false;
+        document.exitPointerLock();
+        overlay.style.display = 'flex';
+        overlay.querySelector('h1').innerText = "CAUGHT BY HILALI";
+        overlay.querySelector('p').innerText = `Survived: ${survivalTime.toFixed(2)}s`;
+        startBtn.innerText = "TRY AGAIN";
+    }
+
+    function throwOffering() {
+        if (!gameActive || throwTimer > 0) return;
+
+        throwTimer = THROW_COOLDOWN;
+        
+        const dateGeo = new THREE.CapsuleGeometry(0.12, 0.4, 4, 8); 
+        const dateMat = new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.3, metalness: 0.2 });
+        const mesh = new THREE.Mesh(dateGeo, dateMat);
+        
+        // --- AIM LOGIC ---
+        // 1. Get Camera Position (Eye Level)
+        const spawnPos = camera.getWorldPosition(new THREE.Vector3());
+        // 2. Get Camera Forward Vector (Where crosshair is pointing)
+        const dir = new THREE.Vector3();
+        camera.getWorldDirection(dir);
+        
+        // 3. Move spawn slightly forward so it doesn't clip inside the camera
+        spawnPos.add(dir.clone().multiplyScalar(0.5));
+        
+        mesh.position.copy(spawnPos);
+        
+        // 4. Align orientation
+        mesh.quaternion.copy(camera.quaternion);
+        mesh.rotateX(Math.PI / 2); // Rotate capsule to align with flight path
+
+        const offering = {
+            mesh: mesh,
+            velocity: dir.multiplyScalar(50), // Fly straight
+            life: 2.0 
+        };
+
+        scene.add(mesh);
+        offerings.push(offering);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        const time = performance.now();
+        const dt = Math.min((time - lastTime) / 1000, 0.1);
+        lastTime = time;
+
+        if (!gameActive) {
+            renderer.render(scene, camera);
+            return;
+        }
+
+        survivalTime += dt;
+        uiTimer.innerText = survivalTime.toFixed(1);
+
+        // UI Updates
+        if (throwTimer > 0) throwTimer -= dt * 1000;
+        if (huzzTimer > 0) {
+            huzzTimer -= dt * 1000;
+            uiHuzz.innerText = `HUZZ: ${(huzzTimer/1000).toFixed(1)}s`;
+            uiHuzz.style.color = '#555';
+        } else {
+            uiHuzz.innerText = "HUZZ: READY [E]";
+            uiHuzz.style.color = '#ff69b4';
+        }
+
+        if (enrageTimer > 0) enrageTimer -= dt * 1000;
+        roarTimer -= dt * 1000;
+        if (roarTimer <= 0) {
+            activateRoar();
+            roarTimer = ROAR_INTERVAL;
+        }
+
+        // Player Move
+        const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(player.quaternion);
+        const rgt = new THREE.Vector3(1, 0, 0).applyQuaternion(player.quaternion);
+        fwd.y = 0; fwd.normalize(); rgt.y = 0; rgt.normalize();
+
+        const dir = new THREE.Vector3();
+        if (keys.w) dir.add(fwd);
+        if (keys.s) dir.sub(fwd);
+        if (keys.d) dir.add(rgt);
+        if (keys.a) dir.sub(rgt);
+
+        if (dir.lengthSq() > 0) {
+            dir.normalize();
+            player.position.add(dir.multiplyScalar(PLAYER_SPEED * dt));
+        }
+        player.position.x = Math.max(-145, Math.min(145, player.position.x));
+        player.position.z = Math.max(-145, Math.min(145, player.position.z));
+
+        // Update Huzz
+        if (activeHuzz) {
+            activeHuzz.life -= dt * 1000;
+            
+            // Flee Logic
+            let closestDist = 999;
+            let fleeDir = new THREE.Vector3(0,0,0);
+            enemies.forEach(e => {
+                const d = activeHuzz.mesh.position.distanceTo(e.mesh.position);
+                if (d < closestDist) {
+                    closestDist = d;
+                    fleeDir.subVectors(activeHuzz.mesh.position, e.mesh.position).normalize();
+                }
+            });
+            
+            if(closestDist < 40) {
+                fleeDir.y = 0;
+                activeHuzz.mesh.position.add(fleeDir.multiplyScalar(9.0 * dt));
+                activeHuzz.mesh.lookAt(activeHuzz.mesh.position.clone().add(fleeDir));
+            }
+            activeHuzz.mesh.position.x = Math.max(-140, Math.min(140, activeHuzz.mesh.position.x));
+            activeHuzz.mesh.position.z = Math.max(-140, Math.min(140, activeHuzz.mesh.position.z));
+
+            if (activeHuzz.life <= 0) {
+                scene.remove(activeHuzz.mesh);
+                activeHuzz = null;
+            }
+        }
+
+        // Update Offerings
+        for (let i = offerings.length - 1; i >= 0; i--) {
+            const obj = offerings[i];
+            obj.life -= dt;
+            obj.mesh.position.add(obj.velocity.clone().multiplyScalar(dt));
+
+            if (obj.life <= 0) {
+                scene.remove(obj.mesh);
+                offerings.splice(i, 1);
+                continue;
+            }
+
+            // Hit Detection
+            let hit = false;
+            for (let e of enemies) {
+                const enemyCenter = e.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0));
+                
+                // Allow hitting while Locked In, but NOT while Eating or Farting
+                const canHit = (e.eatTimer <= 0 && e.fartTimer <= 0);
+
+                if (obj.mesh.position.distanceTo(enemyCenter) < 3.0 && canHit) {
+                    hit = true;
+                    e.datesEaten++;
+                    
+                    // 1. Check Gassy Break (Every 3 dates)
+                    if (e.isBoss && e.datesEaten % 3 === 0) {
+                        e.fartTimer = FART_DURATION;
+                        bnrGassy.classList.add('active');
+                        setTimeout(() => bnrGassy.classList.remove('active'), 2000);
+                        break; // Stop checking
+                    }
+
+                    // 2. Check Locked In (Threshold 5)
+                    if (e.isBoss && e.datesEaten >= 5) {
+                        e.lockedInTimer = LOCKED_IN_DURATION;
+                        e.datesEaten = 0; // Reset counter
+                        
+                        // Visuals
+                        bnrLocked.classList.add('active');
+                        setTimeout(() => bnrLocked.classList.remove('active'), 5000);
+                        // Red tint handled in enemy loop
+                        
+                        break;
+                    }
+
+                    // 3. Normal Eat
+                    e.eatTimer = e.isBoss ? EAT_DURATION_BOSS : EAT_DURATION_TWIN;
+                    break;
+                }
+            }
+
+            if (hit) {
+                scene.remove(obj.mesh);
+                offerings.splice(i, 1);
+            }
+        }
+
+        // Update Enemies
+        for (let e of enemies) {
+            
+            // --- STATE MANAGEMENT ---
+            
+            // Locked In Color Change
+            if (e.isBoss && e.lockedInTimer > 0) {
+                e.lockedInTimer -= dt * 1000;
+                // Tint Red
+                e.mesh.children[0].material.color.setHex(0xff0000);
+                e.mesh.children[1].material.color.setHex(0xff0000);
+            } else if (e.isBoss) {
+                // Restore Brown
+                e.mesh.children[0].material.color.setHex(0x4a3b2a);
+                e.mesh.children[1].material.color.setHex(0x4a3b2a);
+            }
+
+            // Handle Stun States
+            if (e.fartTimer > 0) {
+                e.fartTimer -= dt * 1000;
+                // Vibrate
+                e.mesh.position.x += (Math.random()-0.5)*0.2;
+                e.mesh.lookAt(player.position.x, e.mesh.position.y, player.position.z);
+                continue; // Skip movement
+            }
+
+            if (e.eatTimer > 0) {
+                e.eatTimer -= dt * 1000;
+                e.mesh.children[2].position.y = 1.4 + Math.sin(time * 0.025) * 0.3; // Eat anim
+                e.mesh.lookAt(player.position.x, e.mesh.position.y, player.position.z);
+                continue; // Skip movement
+            }
+
+            // --- TARGET SELECTION ---
+            let targetPos = player.position;
+            
+            if (activeHuzz) {
+                if (e.isBoss && e.lockedInTimer > 0) {
+                    // Locked In: Ignore Huzz
+                    targetPos = player.position;
+                } else {
+                    // Normal Boss OR Twins: Chase Huzz
+                    targetPos = activeHuzz.mesh.position;
+                }
+            }
+
+            e.mesh.lookAt(targetPos.x, e.mesh.position.y, targetPos.z);
+
+            // --- MOVEMENT & CATCH ---
+            const dist = e.mesh.position.distanceTo(targetPos);
+            
+            if (dist < 2.0) {
+                if (activeHuzz && targetPos === activeHuzz.mesh.position) {
+                    scene.remove(activeHuzz.mesh);
+                    activeHuzz = null;
+                    e.eatTimer = 2000; 
+                } else {
+                    gameOver();
+                    break;
+                }
+            }
+
+            let currentSpeed = e.baseSpeed;
+            if (enrageTimer > 0) currentSpeed *= ENRAGE_SPEED_MULT;
+
+            const moveDir = new THREE.Vector3().subVectors(targetPos, e.mesh.position).normalize();
+            moveDir.y = 0;
+            e.mesh.position.add(moveDir.multiplyScalar(currentSpeed * dt));
+
+            // Anim
+            e.bobOffset += dt * (enrageTimer > 0 ? 20 : 12);
+            e.mesh.position.y = Math.abs(Math.sin(e.bobOffset)) * 0.6;
+            e.mesh.children[4].rotation.x = -0.3 + Math.sin(e.bobOffset) * 1.0; 
+            e.mesh.children[5].rotation.x = -0.3 + Math.cos(e.bobOffset) * 1.0;
+            e.mesh.children[2].position.y = 1.4; 
+        }
+
+        renderer.render(scene, camera);
+    }
+
+</script>
+</body>
+</html>
