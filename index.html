@@ -402,7 +402,7 @@ class BossEntity extends Entity {
     checkWrathThresholds() {
         if(this.wrath >= 10 && !this.wrathTriggers[10]) {
             this.wrathTriggers[10] = true;
-            this.shield += this.maxHp * 0.10; 
+            this.shield += this.maxHp * 0.30; 
             showBanner('wrath-banner', 3000, "WRATH: Toeny");
         }
         if(this.wrath >= 20 && !this.wrathTriggers[20]) {
@@ -978,7 +978,7 @@ function handleAbilityInput(k) {
     if(!gameActive || ascensionCinematic > 0 || interventionCinematic > 0) return;
     
     if(k === '1' && playerStats.cooldowns['1'] <= 0) {
-        playerStats.shield += 40;
+        playerStats.shield += 70;
         spawnEntity('guardian', playerObj.position);
         const beam = new THREE.Mesh(GEOS.beam, MATS.beamWarn);
         beam.scale.set(2, 50, 2); beam.position.copy(playerObj.position);
