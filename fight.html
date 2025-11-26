@@ -59,7 +59,7 @@
 
 <div id="ui-layer">
     <div id="boss-hud">
-        <div id="boss-name">Lord Sultan</div>
+        <div id="boss-name">General Average</div>
         <div id="boss-hp-bg">
             <div id="boss-hp-fill"></div>
             <div id="boss-shield-fill"></div>
@@ -451,7 +451,7 @@ class Entity {
         this.attackAnimTimer = 0;
         scene.add(this.mesh);
         
-        if(name !== 'Lord Sultan') {
+        if(name !== 'General Average') {
             const canvas = document.createElement('canvas'); canvas.width = 32; canvas.height = 4;
             this.hpCtx = canvas.getContext('2d');
             this.hpTex = new THREE.CanvasTexture(canvas);
@@ -468,10 +468,10 @@ class Entity {
         if(this.shield > 0) { if(this.shield >= amt) { this.shield -= amt; amt = 0; } else { amt -= this.shield; this.shield = 0; } }
         this.hp -= amt;
         particleSystem.emit({ pos: this.mesh.position.clone().add(reusableVector.set(0,2,0)), vel: reusableVector.set(0,1,0), count: 3, life: 0.5, size: 0.5, color: new THREE.Color(0xff0000), spread: 5 });
-        if(this.name !== 'Lord Sultan') this.updateHealthBar();
+        if(this.name !== 'General Average') this.updateHealthBar();
         if(this.hp <= 0) { 
              particleSystem.emit({ pos: this.mesh.position.clone().add(reusableVector.set(0,2,0)), vel: reusableVector.set(0,2,0), count: 50, life: 1.5, size: 1.0, color: new THREE.Color(0x880000), spread: 10 });
-            if(this.name === 'Lord Sultan') { triggerVictoryCinematic(); }
+            if(this.name === 'General Average') { triggerVictoryCinematic(); }
             else { this.dead = true; scene.remove(this.mesh); }
         }
     }
@@ -490,7 +490,7 @@ class BossEntity extends Entity {
     constructor(pos) {
         const mesh = createChimpMesh(true);
         mesh.position.copy(pos);
-        super(mesh, CONFIG.BOSS_MAX_HP, CONFIG.BOSS_MAX_HP, 'enemy', 'Lord Sultan');
+        super(mesh, CONFIG.BOSS_MAX_HP, CONFIG.BOSS_MAX_HP, 'enemy', 'General Average');
         this.stage = 1;
         this.retreatMode = false;
         this.retreatTimer = 0;
@@ -555,7 +555,7 @@ class BossEntity extends Entity {
     activateMoroccoRage() {
         this.gloryMode = true; this.gloryTimer = 8000; 
         this.setAnim('spin');
-        showBanner('wrath-banner', 4000, "GLORY TO MOROCCO");
+        showBanner('wrath-banner', 4000, "Journée d'Examen");
         entities.forEach(e => { if(e.faction === 'ally' && e.hp < 1000) e.takeDamage(9999); });
         for(let i=0; i<6; i++) spawnEntity('void_twin', this.mesh.position); // Increased spawn
     }
@@ -606,14 +606,14 @@ class BossEntity extends Entity {
                 setTimeout(() => this.attackVoidWall(), 4000);
                 break;
             case 3: 
-                msg = "STAGE 3: PIZZA SALVATORE "; 
+                msg = "STAGE 3: Lock in "; 
                 summonHorde(8, 12, 2);
                 document.getElementById('ab-4').style.display = 'flex'; // Unlock Diddy Time
                 this.attackCataclysm(); // First Cataclysm
                 setTimeout(() => this.attackOrbitalLasers(), 3000);
                 break;
             case 4: 
-                msg = "STAGE 4: Fart";
+                msg = "STAGE 4: Goon";
                 summonHorde(10, 15, 3);
                 this.attackCataclysm(); 
                 setTimeout(() => {
@@ -622,7 +622,7 @@ class BossEntity extends Entity {
                 }, 2500);
                 break;
             case 5: 
-                msg = "STAGE 5: The Sultan Makes the Rules"; 
+                msg = "STAGE 5: Labo Réfraction"; 
                 this.hp += this.maxHp * 0.80; 
                 this.shield += this.maxHp * 1.00; 
                 summonHorde(15, 20, 5); // Massive Army
@@ -638,7 +638,7 @@ class BossEntity extends Entity {
     
 // --- UPDATED CATACLYSM: WAVES (Overlapping attacks with 2s intervals) ---
     attackCataclysm() {
-        showBanner('wrath-banner', 4000, "CATACLYSM PROTOCOL");
+        showBanner('wrath-banner', 4000, "Exigences de Laboratoire");
         this.setAnim('spin');
 
         // WAVE 1: Immediate Chaos (0.0s)
@@ -733,7 +733,7 @@ class BossEntity extends Entity {
     // --- NEW ABILITY 1: VOID WALL ---
 // --- UPDATED ABILITY: VOID WALL (NO KNOCKBACK) ---
     attackVoidWall() {
-        showBanner('wrath-banner', 2000, "No huzz");
+        showBanner('wrath-banner', 2000, "Exam Answer?");
         this.setAnim('smash');
         const wallGeo = new THREE.BoxGeometry(60, 15, 2);
         const wall = new THREE.Mesh(wallGeo, MATS.projVoid);
@@ -768,7 +768,7 @@ class BossEntity extends Entity {
     // --- NEW ABILITY 2: GRAVITY WELL ---
     // Sucks player towards boss
      attackGravityWell() {
-        showBanner('wrath-banner', 2000, "GRAVITY WELL");
+        showBanner('wrath-banner', 2000, "Math: Erreur de Structure");
         this.setAnim('channel');
         
         const well = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), new THREE.MeshBasicMaterial({color:0x000000, wireframe:true}));
@@ -868,7 +868,7 @@ class BossEntity extends Entity {
     // --- NEW ABILITY 5: VOID MINES ---
     // Spawns mines that explode after delay
     attackVoidMines() {
-        showBanner('wrath-banner', 2000, "MINEFIELD");
+        showBanner('wrath-banner', 2000, "TMS: RAPPORT DE LABO");
         this.setAnim('smash');
         for(let i=0; i<6; i++) {
             const pos = playerObj.position.clone().add(new THREE.Vector3((Math.random()-0.5)*40, 0, (Math.random()-0.5)*40));
@@ -941,7 +941,7 @@ class BossEntity extends Entity {
     }
 
     attackGrandSlam() {
-        showBanner('wrath-banner', 2000, "SKY SHATTER");
+        showBanner('wrath-banner', 2000, "RÉACTION RU");
         let frames = 0;
         this.setAnim('channel');
         const upInt = setInterval(() => {
@@ -964,7 +964,7 @@ class BossEntity extends Entity {
     }
 
     attackMeteorRain(buffed = false) {
-        if(buffed) showBanner('wrath-banner', 2000, "Gluttony");
+        if(buffed) showBanner('wrath-banner', 2000, "Récit Collectif");
         this.setAnim('channel');
         for(let i=0; i<8; i++) { 
             setTimeout(() => {
@@ -1114,7 +1114,7 @@ function runVictoryCinematic(dt) {
     if(cinematicTimer > 8) {
         document.getElementById('overlay').style.display = 'flex'; 
         document.querySelector('h1').innerText = "VICTORY";
-        document.querySelector('p').innerText = "Lord Sultan has been purged. The Void collapses.";
+        document.querySelector('p').innerText = "General Average has been purged. The Void collapses.";
         document.getElementById('ui-layer').style.display = 'flex';
         cinematicMode = false;
     }
@@ -1593,10 +1593,10 @@ function animate() {
 
         const dist = ent.mesh.position.distanceTo(target);
         let stopDist = (ent.name === 'Soldier' || ent.name === 'Elite') ? 30 : 2; // Minions engage from further
-        if(ent.name === 'Lord Sultan') stopDist = 12; 
+        if(ent.name === 'General Average') stopDist = 12; 
 
         if(dist > stopDist) {
-            let speed = (ent.name === 'Lord Sultan') ? CONFIG.BOSS_SPEED : 9; // Buffed minion speed
+            let speed = (ent.name === 'General Average') ? CONFIG.BOSS_SPEED : 9; // Buffed minion speed
             const move = reusableVector.subVectors(target, ent.mesh.position).normalize(); move.y = 0;
             ent.mesh.position.add(move.multiplyScalar(speed * dt));
             ent.mesh.lookAt(target.x, ent.mesh.position.y, target.z);
@@ -1607,7 +1607,7 @@ function animate() {
                 // Minion Buff: Fire much faster (800ms vs 2000ms)
                 if(ent.attackTimer <= 0 && dist < 100) { npcShoot(ent, target); ent.attackTimer = 800; }
             } else if (dist < 5){
-                let dmg = (ent.name === 'Lord Sultan') ? CONFIG.BOSS_DMG : 25; // Buffed melee dmg
+                let dmg = (ent.name === 'General Average') ? CONFIG.BOSS_DMG : 25; // Buffed melee dmg
                 if(ent.faction === 'enemy') { if(targetEnt) targetEnt.takeDamage(dmg * dt * 5, false); else if(dist < 5) damagePlayer(dmg * dt * 3); } 
                 else { if(targetEnt) targetEnt.takeDamage(dmg * dt * 5, false); }
             }
