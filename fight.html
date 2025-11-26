@@ -133,12 +133,12 @@ const CONFIG = {
     BOSS_SPEED: 14.0, 
     BOSS_DMG: 65, 
     RIFLE_DMG: 95, RIFLE_RATE: 120, 
-    DIRECT_HIT_DMG: 7000, DIRECT_HIT_CD: 1600,
+    DIRECT_HIT_DMG: 4000, DIRECT_HIT_CD: 1600,
     // Minion Stats
     TWIN_HP: 950, VOID_TWIN_HP: 2500, ELITE_HP: 3700, TITAN_HP: 4500, FOOTMAN_HP: 1650, 
     ALLY_HP: 700, GUARDIAN_HP: 4000,
     THROW_CD: 300, MECH_CD: 30000, MECH_DURATION: 22000,
-    LAMENT_DMG: 90, RAILGUN_DMG: 2500, RAILGUN_CD: 800, MECH_SHIELD: 1500,
+    LAMENT_DMG: 90, RAILGUN_DMG: 1500, RAILGUN_CD: 800, MECH_SHIELD: 1000,
     VOID_CANNON_DMG: 120,
     // New Ability Stats
     WALL_DMG: 80,
@@ -616,6 +616,7 @@ class BossEntity extends Entity {
                 msg = "STAGE 4: Goon";
                 summonHorde(10, 15, 3);
                 this.attackCataclysm(); 
+                this.shield += this.maxHp * 0.50;
                 setTimeout(() => {
                      showBanner('wrath-banner', 3000, "Fart");
                      this.attackCataclysm(); // Stacked Cataclysm
@@ -629,6 +630,8 @@ class BossEntity extends Entity {
                 this.attackCataclysm();
                 setTimeout(() => this.attackCataclysm(), 2000); // Triple Stack
                 setTimeout(() => this.attackCataclysm(), 4000);
+                setTimeout(() => this.attackCataclysm(), 8000);
+                setTimeout(() => this.attackCataclysm(), 12000);
                 break;
         }
         showBanner('stage-banner', 4000, msg);
