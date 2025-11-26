@@ -10,8 +10,25 @@
         #boss-hud { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 600px; text-align: center; }
         #boss-name { color: #d4af37; font-size: 32px; font-weight: 900; text-transform: uppercase; text-shadow: 0 0 15px #d4af37; margin-bottom: 5px; letter-spacing: 2px; }
         #boss-hp-bg { width: 100%; height: 30px; background: #111; border: 4px solid #d4af37; position: relative; box-shadow: 0 0 20px black; transform: skewX(-20deg); }
-        #boss-hp-fill { height: 100%; background: linear-gradient(90deg, #800, #f00); width: 100%; transition: width 0.1s; }
-        #boss-shield-fill { height: 100%; background: #fff; width: 0%; position: absolute; top:0; left:0; opacity: 0.6; mix-blend-mode: overlay; transition: width 0.1s; }
+        #boss-hp-fill { 
+    height: 100%; 
+    background: linear-gradient(90deg, #800, #f00); 
+    width: 100%; 
+    max-width: 100%; /* PREVENTS OVERFLOW */
+    transition: width 0.1s; 
+}
+     #boss-shield-fill { 
+    height: 100%; 
+    background: #d000ff; /* PURPLE COLOR */
+    width: 0%; 
+    max-width: 100%; /* PREVENTS OVERFLOW */
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    opacity: 0.7; 
+    mix-blend-mode: lighten; /* Makes purple pop over the red HP */
+    transition: width 0.1s; 
+}
         #boss-wrath-bg { width: 100%; height: 8px; background: #222; margin-top: 5px; border: 1px solid #555; position: relative; }
         #boss-wrath-fill { height: 100%; background: #b0f; width: 0%; transition: width 0.2s; box-shadow: 0 0 10px #b0f; }
         #boss-stage { margin-top: 5px; color: #ff0000; font-weight: bold; font-size: 24px; text-shadow: 0 0 10px red; }
@@ -20,7 +37,11 @@
         .bar-wrap { margin-bottom: 10px; }
         .bar-label { color: #fff; font-size: 16px; font-weight: bold; text-shadow: 1px 1px 0 #000; }
         .bar-bg { width: 100%; height: 20px; background: rgba(0,0,0,0.6); border: 2px solid #777; position: relative; }
-        .bar-fill { height: 100%; transition: width 0.2s; }
+.bar-fill { 
+    height: 100%; 
+    max-width: 100%; /* PREVENTS OVERFLOW */
+    transition: width 0.2s; 
+}
         #p-hp-fill { background: #0f0; width: 100%; }
         #p-shield-fill { background: #00f; width: 0%; position: absolute; top: 0; left: 0; opacity: 0.7; }
         #ammo-counter { color: #0ff; font-weight: bold; font-size: 24px; display: none; text-shadow: 0 0 5px #0ff; margin-top: 5px;}
@@ -127,24 +148,24 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 
 // Buffed Stats
 const CONFIG = {
-    BOSS_MAX_HP: 90000, 
+    BOSS_MAX_HP: 100000, 
     PLAYER_MAX_HP: 200,
-    PLAYER_SPEED: 12.0,
+    PLAYER_SPEED: 11.0,
     BOSS_SPEED: 14.0, 
     BOSS_DMG: 65, 
-    RIFLE_DMG: 95, RIFLE_RATE: 120, 
-    DIRECT_HIT_DMG: 4000, DIRECT_HIT_CD: 1600,
+    RIFLE_DMG: 125, RIFLE_RATE: 120, 
+    DIRECT_HIT_DMG: 4000, DIRECT_HIT_CD: 2000,
     // Minion Stats
-    TWIN_HP: 950, VOID_TWIN_HP: 2500, ELITE_HP: 3700, TITAN_HP: 4500, FOOTMAN_HP: 1650, 
-    ALLY_HP: 700, GUARDIAN_HP: 4000,
-    THROW_CD: 300, MECH_CD: 30000, MECH_DURATION: 22000,
-    LAMENT_DMG: 90, RAILGUN_DMG: 1500, RAILGUN_CD: 800, MECH_SHIELD: 1000,
+    TWIN_HP: 1950, VOID_TWIN_HP: 4500, ELITE_HP: 3700, TITAN_HP: 8500, FOOTMAN_HP: 2650, 
+    ALLY_HP: 700, GUARDIAN_HP: 2000,
+    THROW_CD: 300, MECH_CD: 30000, MECH_DURATION: 12000,
+    LAMENT_DMG: 90, RAILGUN_DMG: 1500, RAILGUN_CD: 800, MECH_SHIELD: 800,
     VOID_CANNON_DMG: 120,
     // New Ability Stats
     WALL_DMG: 80,
-    LASER_DMG: 70,
+    LASER_DMG: 100,
     CLONE_DMG: 80,
-    MINE_DMG: 120
+    MINE_DMG: 220
 };
 
 const GEOS = {
@@ -601,7 +622,8 @@ class BossEntity extends Entity {
             case 2: 
                 msg = "STAGE 2: Crashout"; 
                 summonHorde(5, 10, 0);
-                this.attackGravityWell(); 
+                this.attackGravityWell();
+                this.shield += this.maxHp * 0.20;
                 setTimeout(() => this.attackVoidWall(), 2000);
                 setTimeout(() => this.attackVoidWall(), 4000);
                 break;
@@ -1157,7 +1179,7 @@ function handleAbilityInput(k) {
     if(!gameActive || ascensionCinematic > 0 || interventionCinematic > 0) return;
     
     if(k === '1' && playerStats.cooldowns['1'] <= 0) {
-        playerStats.shield += 250; playerStats.health += 70;
+        playerStats.shield += 100; playerStats.health += 70;
         spawnEntity('guardian', playerObj.position);
         const shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(2, 16, 16), new THREE.MeshBasicMaterial({color: 0x00ffff, transparent:true, opacity: 0.3}));
         shieldMesh.position.copy(playerObj.position); scene.add(shieldMesh);
@@ -1181,7 +1203,8 @@ function handleAbilityInput(k) {
         weaponModels.railgun.visible = true;
         particleSystem.emit({ pos: playerObj.position, vel: reusableVector.set(0,0,0), count: 100, life: 1.0, size: 1.0, color: new THREE.Color(0x00ffff), spread: 15 });
     }
-    else if (k === 'shift' && playerStats.cooldowns['shift'] <= 0 && !playerStats.leaping) { performPlayerLeap(); playerStats.cooldowns['shift'] = CD_MAX['shift']; triggerCooldownUI('shift'); }
+    else if (k === 'shift' && playerStats.cooldowns['shift'] <= 0 && !playerStats.leaping) { performPlayerLeap(); playerStats.cooldowns['shift'] = CD_MAX['shift']; triggerCooldownUI('shift');    playerStats.shield += 100; playerStats.health += 70;
+ }
     else if (k === 'f' && playerStats.cooldowns['f'] <= 0) { performLamentForTheLiving(); playerStats.cooldowns['f'] = CD_MAX['f']; triggerCooldownUI('f'); }
     else if (k === '4' && boss.stage >= 3 && !playerStats.ascended) { performAscension(); }
 }
@@ -1239,8 +1262,8 @@ function performLamentForTheLiving() {
         }
     });
     if(absorbed > 0) {
-        playerStats.shield += absorbed; playerStats.lamentShieldTimer = 15000;
-        playerStats.damageBuff = 2.0; playerStats.buffTimer = 10000;
+        playerStats.shield += absorbed; playerStats.lamentShieldTimer = 8000;
+        playerStats.damageBuff = 2.5; playerStats.buffTimer = 10000;
         document.getElementById('buff-text').style.display = 'block';
     }
 }
@@ -1535,7 +1558,7 @@ function animate() {
         if(boss.retreatMode) { if((boss.retreatTimer -= dt * 1000) <= 0) { boss.retreatMode = false; boss.shield = 0; } } 
         else {
             if(boss.gloryMode) { if((boss.gloryTimer -= dt * 1000) <= 0) boss.gloryMode = false; }
-            if((boss.actionTimer -= dt * 1000) <= 0) { boss.selectAttack(); let baseRate = 2000; if(boss.wrath > 50) baseRate = 1200; boss.actionTimer = baseRate - (boss.stage * 150); }
+            if((boss.actionTimer -= dt * 1000) <= 0) { boss.selectAttack(); let baseRate = 1300; if(boss.wrath > 70) baseRate = 950; boss.actionTimer = baseRate - (boss.stage * 120); }
         }
     }
 
@@ -1608,9 +1631,9 @@ function animate() {
              if(ent.name === 'Soldier' || ent.name === 'Elite') {
                 ent.attackTimer = (ent.attackTimer || 0) - dt * 1000;
                 // Minion Buff: Fire much faster (800ms vs 2000ms)
-                if(ent.attackTimer <= 0 && dist < 100) { npcShoot(ent, target); ent.attackTimer = 800; }
+                if(ent.attackTimer <= 0 && dist < 100) { npcShoot(ent, target); ent.attackTimer = 450; }
             } else if (dist < 5){
-                let dmg = (ent.name === 'General Average') ? CONFIG.BOSS_DMG : 25; // Buffed melee dmg
+                let dmg = (ent.name === 'General Average') ? CONFIG.BOSS_DMG : 55; // Buffed melee dmg
                 if(ent.faction === 'enemy') { if(targetEnt) targetEnt.takeDamage(dmg * dt * 5, false); else if(dist < 5) damagePlayer(dmg * dt * 3); } 
                 else { if(targetEnt) targetEnt.takeDamage(dmg * dt * 5, false); }
             }
@@ -1653,9 +1676,33 @@ function createHumanoidMesh(mat,isBeast) {
     return g;
 }
 
-function updateBossUI() { if(!boss) return; const hpPct = (boss.hp / boss.maxHp) * 100; const shPct = Math.min(100, (boss.shield / boss.maxHp) * 100); document.getElementById('boss-hp-fill').style.width = hpPct + '%'; document.getElementById('boss-shield-fill').style.width = shPct + '%'; document.getElementById('boss-wrath-fill').style.width = boss.wrath + '%'; }
-function updatePlayerUI() { document.getElementById('p-hp-fill').style.width = playerStats.hp + '%'; document.getElementById('p-shield-fill').style.width = playerStats.shield + '%'; document.getElementById('ammo-val').innerText = playerStats.rifleAmmo; }
-function triggerCooldownUI(key) { const el = document.getElementById('cd-'+key); el.style.height = '100%'; document.getElementById('ab-'+key).classList.remove('ready'); }
+function updateBossUI() { 
+    if(!boss) return; 
+    
+    // Calculate percentages and Clamp to 100% max
+    const hpPct = Math.min(100, (boss.hp / boss.maxHp) * 100); 
+    // If shield is huge, cap it visually at 100%
+    const shPct = Math.min(100, (boss.shield / boss.maxHp) * 100); 
+    const wrathPct = Math.min(100, boss.wrath);
+
+    document.getElementById('boss-hp-fill').style.width = hpPct + '%'; 
+    document.getElementById('boss-shield-fill').style.width = shPct + '%'; 
+    document.getElementById('boss-wrath-fill').style.width = wrathPct + '%'; 
+    
+}
+function updatePlayerUI() { 
+    // Clamp Player HP and Shield to 100% visual width
+    const hpPct = Math.min(100, (playerStats.hp / 100) * 100);
+    
+    // Assuming 100 Shield is a "full bar" visually, or match maxHp. 
+    // Currently logic caps it at 100% width regardless of how high the number is.
+
+    const shPct = Math.min(100, (playerStats.shield/ 2000) * 100); 
+
+    document.getElementById('p-hp-fill').style.width = hpPct + '%'; 
+    document.getElementById('p-shield-fill').style.width = shPct + '%'; 
+    document.getElementById('ammo-val').innerText = playerStats.rifleAmmo; 
+}function triggerCooldownUI(key) { const el = document.getElementById('cd-'+key); el.style.height = '100%'; document.getElementById('ab-'+key).classList.remove('ready'); }
 function updateCooldownUI(key, current, max) { const el = document.getElementById('cd-'+key); const pct = (current / max) * 100; el.style.height = pct + '%'; if(pct <= 0) document.getElementById('ab-'+key).classList.add('ready'); }
 function showBanner(id, time, text=null) { const el = document.getElementById(id); if(text) el.innerText = text; el.classList.add('active'); setTimeout(() => el.classList.remove('active'), time); }
 
