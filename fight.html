@@ -623,7 +623,7 @@ class BossEntity extends Entity {
                 break;
             case 5: 
                 msg = "STAGE 5: The Sultan Makes the Rules"; 
-                this.hp += this.maxHp * 1.00; 
+                this.hp += this.maxHp * 0.80; 
                 this.shield += this.maxHp * 1.00; 
                 summonHorde(15, 20, 5); // Massive Army
                 this.attackCataclysm();
@@ -767,11 +767,10 @@ class BossEntity extends Entity {
     }
     // --- NEW ABILITY 2: GRAVITY WELL ---
     // Sucks player towards boss
-      attackGravityWell() {
-        showBanner('wrath-banner', 2000, "Stink aura");
+     attackGravityWell() {
+        showBanner('wrath-banner', 2000, "GRAVITY WELL");
         this.setAnim('channel');
         
-        // Visuals
         const well = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), new THREE.MeshBasicMaterial({color:0x000000, wireframe:true}));
         well.position.copy(this.mesh.position).add(new THREE.Vector3(0, 5, 0));
         scene.add(well);
@@ -782,26 +781,26 @@ class BossEntity extends Entity {
             well.scale.setScalar(1 + frames/10);
             well.rotation.y += 0.2;
             
-            // Physics: Pull ONLY the player
-            const pullDir = reusableVector.subVectors(this.mesh.position, playerObj.position).normalize();
-            const dist = this.mesh.position.distanceTo(playerObj.position);
-            
-            if(dist > 5) {
-                playerObj.position.add(pullDir.multiplyScalar(0.4)); // Pull strength
-            } else {
-                damagePlayer(2); // Damage if too close
+            // FIX: Player immunity while dashing
+            if (!playerStats.leaping) {
+                // FIX: Force Y to 0 so we don't pull player into the ground
+                const pullDir = reusableVector.subVectors(this.mesh.position, playerObj.position);
+                pullDir.y = 0.2; 
+                pullDir.normalize();
+                
+                const dist = this.mesh.position.distanceTo(playerObj.position);
+                if(dist > 5) { 
+                    playerObj.position.add(pullDir.multiplyScalar(0.4)); 
+                } else { 
+                    damagePlayer(2); 
+                }
             }
-            
-            // REMOVED: entities.forEach loop (Minions are no longer affected)
 
-            // NERFED DURATION: 94 frames * 16ms ~= 1.5 seconds (was 120 frames)
-            if(frames > 60) { 
-                clearInterval(suckInt); 
-                scene.remove(well); 
-                this.setAnim('idle'); 
-            }
+            if(frames > 94) { clearInterval(suckInt); scene.remove(well); this.setAnim('idle'); }
         }, 16);
     }
+
+    
     // --- NEW ABILITY 3: ORBITAL LASERS ---
     // Spawns vertical lasers around the player
     attackOrbitalLasers() {
