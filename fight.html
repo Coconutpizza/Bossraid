@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Lord Sultan - The Void King (Clear Skies)</title>
+    <title>Classroom</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', Courier, monospace; user-select: none; }
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; z-index: 5;}
@@ -89,7 +89,7 @@
         <div class="ability-box" id="ab-3"><span class="key-bind">3</span>⚔️<div class="cooldown-overlay" id="cd-3"></div></div>
         <div class="ability-box" id="ab-f"><span class="key-bind">F</span>💀<div class="cooldown-overlay" id="cd-f"></div></div>
         <div class="ability-box" id="ab-e"><span class="key-bind">E</span>🤖<div class="cooldown-overlay" id="cd-e"></div></div>
-        <div class="ability-box" id="ab-shift"><span class="key-bind">SHFT</span>🚀<div class="cooldown-overlay" id="cd-shift"></div></div>
+        <div class="ability-box" id="ab-shift"><span class="key-bind">SHFT</span>Dash<div class="cooldown-overlay" id="cd-shift"></div></div>
         <div class="ability-box ascend" id="ab-4"><span class="key-bind">4</span>𝓓𝓲𝓭𝓭𝔂👅</div>
     </div>
 
@@ -127,19 +127,24 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 
 // Buffed Stats
 const CONFIG = {
-    BOSS_MAX_HP: 60000, 
+    BOSS_MAX_HP: 90000, 
     PLAYER_MAX_HP: 200,
-    PLAYER_SPEED: 12.0, // Slight speed buff for better control feel
+    PLAYER_SPEED: 12.0,
     BOSS_SPEED: 14.0, 
     BOSS_DMG: 65, 
-    RIFLE_DMG: 85, RIFLE_RATE: 130, 
-    DIRECT_HIT_DMG: 3000, DIRECT_HIT_CD: 1000,
+    RIFLE_DMG: 95, RIFLE_RATE: 120, 
+    DIRECT_HIT_DMG: 800, DIRECT_HIT_CD: 100,
     // Minion Stats
     TWIN_HP: 650, VOID_TWIN_HP: 1000, ELITE_HP: 1700, TITAN_HP: 4500, FOOTMAN_HP: 650, 
-    ALLY_HP: 400, GUARDIAN_HP: 1200,
-    THROW_CD: 300, MECH_CD: 20000, MECH_DURATION: 12000,
-    LAMENT_DMG: 45, RAILGUN_DMG: 1500, RAILGUN_CD: 800, MECH_SHIELD: 550,
-    VOID_CANNON_DMG: 120
+    ALLY_HP: 700, GUARDIAN_HP: 4000,
+    THROW_CD: 300, MECH_CD: 30000, MECH_DURATION: 22000,
+    LAMENT_DMG: 90, RAILGUN_DMG: 2500, RAILGUN_CD: 800, MECH_SHIELD: 2500,
+    VOID_CANNON_DMG: 120,
+    // New Ability Stats
+    WALL_DMG: 80,
+    LASER_DMG: 70,
+    CLONE_DMG: 80,
+    MINE_DMG: 120
 };
 
 const GEOS = {
@@ -195,7 +200,7 @@ let isMouseDown = false;
 const keys = { w: false, a: false, s: false, d: false };
 
 let playerStats = { 
-    hp: 100, maxHp: 100, shield: 150, 
+    hp: 300, maxHp: 300, shield: 150, 
     rifleActive: false, rifleAmmo: 0,
     throwTimer: 0, attackTimer: 0, directHitTimer: 0,
     mechActive: false, mechTimer: 0,
@@ -206,7 +211,7 @@ let playerStats = {
     cooldowns: { '1': 0, '2': 0, '3': 0, 'e': 0, 'f': 0, 'shift': 0 }
 };
 
-const CD_MAX = { '1': 10000, '2': 15000, '3': 20000, 'e': 40000, 'f': 30000, 'shift': 4000 };
+const CD_MAX = { '1': 1500, '2': 8000, '3': 8000, 'e': 20000, 'f': 30000, 'shift': 700 };
 let boss = null;
 let ascensionCinematic = 0;
 let interventionCinematic = 0;
@@ -480,6 +485,7 @@ class Entity {
     }
 }
 
+// 2. REPLACE THE ENTIRE BossEntity CLASS
 class BossEntity extends Entity {
     constructor(pos) {
         const mesh = createChimpMesh(true);
@@ -493,8 +499,7 @@ class BossEntity extends Entity {
         this.wrathTriggers = {}; 
         this.gloryMode = false;
         this.gloryTimer = 0;
-        this.target = null;
-        this.animState = 'idle'; // idle, smash, spin, channel
+        this.animState = 'idle'; 
         this.animTimer = 0;
         this.limbs = {
             leftArm: mesh.getObjectByName('leftArm'),
@@ -506,12 +511,11 @@ class BossEntity extends Entity {
     takeDamage(amt, isPlayerSource) {
         if(this.dead) return;
         
-        // Stage 5 Invincibility Check
         if(this.stage === 5) {
             const livingMinions = entities.filter(e => e.faction === 'enemy' && e !== this && !e.dead).length;
             if(livingMinions > 0) {
                 document.getElementById('boss-shield-msg').style.display = 'block';
-                return; // 0 Damage
+                return; 
             } else {
                 document.getElementById('boss-shield-msg').style.display = 'none';
             }
@@ -532,7 +536,7 @@ class BossEntity extends Entity {
         this.wrath += amount;
         if(this.wrath >= 100) {
             this.wrath = 0; 
-            this.attackCataclysm();
+            this.attackCataclysm(); // Trigger the full combo
             this.wrathTriggers = {};
             updateBossUI();
         } else {
@@ -543,9 +547,9 @@ class BossEntity extends Entity {
 
     checkWrathThresholds() {
         if(this.wrath >= 20 && !this.wrathTriggers[20]) { this.wrathTriggers[20] = true; this.triggerLament(); }
-        if(this.wrath >= 40 && !this.wrathTriggers[40]) { this.wrathTriggers[40] = true; this.attackVoidBomb(); }
+        if(this.wrath >= 40 && !this.wrathTriggers[40]) { this.wrathTriggers[40] = true; this.attackVoidMines(); } // Changed to new ability
         if(this.wrath >= 60 && !this.wrathTriggers[60]) { this.wrathTriggers[60] = true; this.activateMoroccoRage(); }
-        if(this.wrath >= 80 && !this.wrathTriggers[80]) { this.wrathTriggers[80] = true; this.attackLeapPunch(); }
+        if(this.wrath >= 80 && !this.wrathTriggers[80]) { this.wrathTriggers[80] = true; this.attackShadowClones(); } // Changed to new ability
     }
 
     activateMoroccoRage() {
@@ -553,12 +557,13 @@ class BossEntity extends Entity {
         this.setAnim('spin');
         showBanner('wrath-banner', 4000, "GLORY TO MOROCCO");
         entities.forEach(e => { if(e.faction === 'ally' && e.hp < 1000) e.takeDamage(9999); });
-        for(let i=0; i<4; i++) spawnEntity('void_twin', this.mesh.position);
+        for(let i=0; i<6; i++) spawnEntity('void_twin', this.mesh.position); // Increased spawn
     }
 
     triggerRetreat() {
-        showBanner('wrath-banner', 3000, " RETREAT");
-        this.retreatMode = true; this.retreatTimer = 4000; this.shield += 5000;
+        showBanner('wrath-banner', 3000, " TACTICAL RETREAT");
+        this.retreatMode = true; this.retreatTimer = 4000; this.shield += 8000;
+        // Basic jump logic
         let dir = reusableVector.subVectors(this.mesh.position, playerObj.position).normalize();
         if(this.mesh.position.length() > 200) dir.subVectors(reusableVector.set(0,0,0), this.mesh.position).normalize();
         dir.y = 0;
@@ -579,26 +584,51 @@ class BossEntity extends Entity {
         if(newStage > this.stage) { this.stage = newStage; this.triggerStageEvent(); }
     }
 
+    // --- EXPANDED STAGE EVENTS ---
     triggerStageEvent() {
         this.wrath = 0; 
         this.wrathTriggers = {};
         let msg = "";
+        
+        // Helper to mass summon
+        const summonHorde = (elites, twins, titans) => {
+            for(let i=0; i<elites; i++) spawnEntity('elite', this.mesh.position);
+            for(let i=0; i<twins; i++) spawnEntity('twin', this.mesh.position);
+            for(let i=0; i<titans; i++) spawnEntity('titan', this.mesh.position);
+        };
+
         switch(this.stage) {
-            case 2: msg = "STAGE 2: dynasty"; this.summonStage2Units(); break;
-            case 3: msg = "STAGE 3: Pizza Salvatore"; spawnEntity('titan', this.mesh.position); spawnEntity('titan', this.mesh.position); document.getElementById('ab-4').style.display = 'flex'; break;
-            case 4: msg = "STAGE 4: Fart attack";
-                this.attackMeteorRain();
-                this.attackCataclysm();
+            case 2: 
+                msg = "STAGE 2: Crashout"; 
+                summonHorde(5, 10, 0);
+                this.attackGravityWell(); 
+                setTimeout(() => this.attackVoidWall(), 2000);
+                setTimeout(() => this.attackVoidWall(), 4000);
                 break;
-            case 5: msg = "STAGE 5: The Sultan makes the rules. Kneel to Morroco"; 
+            case 3: 
+                msg = "STAGE 3: PIZZA SALVATORE "; 
+                summonHorde(8, 12, 2);
+                document.getElementById('ab-4').style.display = 'flex'; // Unlock Diddy Time
+                this.attackCataclysm(); // First Cataclysm
+                setTimeout(() => this.attackOrbitalLasers(), 3000);
+                break;
+            case 4: 
+                msg = "STAGE 4: Fart";
+                summonHorde(10, 15, 3);
+                this.attackCataclysm(); 
+                setTimeout(() => {
+                     showBanner('wrath-banner', 3000, "Fart");
+                     this.attackCataclysm(); // Stacked Cataclysm
+                }, 2500);
+                break;
+            case 5: 
+                msg = "STAGE 5: The Sultan Makes the Rules"; 
                 this.hp += this.maxHp * 1.00; 
-                this.shield += this.maxHp * 1.0; 
-                this.attackCataclysm(); 
-                this.summonStage2Units(); 
-                this.summonStage2Units();
-                this.attackCataclysm(); 
+                this.shield += this.maxHp * 1.00; 
+                summonHorde(15, 20, 5); // Massive Army
                 this.attackCataclysm();
-                this.attackCataclysm();
+                setTimeout(() => this.attackCataclysm(), 2000); // Triple Stack
+                setTimeout(() => this.attackCataclysm(), 4000);
                 break;
         }
         showBanner('stage-banner', 4000, msg);
@@ -606,26 +636,76 @@ class BossEntity extends Entity {
         updateBossUI();
     }
     
-    summonStage2Units() {
-        for(let i=0; i<8; i++) spawnEntity('elite', this.mesh.position);
-        for(let i=0; i<12; i++) spawnEntity('twin', this.mesh.position);
-        spawnEntity('titan', this.mesh.position);
-    }
+// --- UPDATED CATACLYSM: WAVES (Overlapping attacks with 2s intervals) ---
+    attackCataclysm() {
+        showBanner('wrath-banner', 4000, "CATACLYSM PROTOCOL");
+        this.setAnim('spin');
 
+        // WAVE 1: Immediate Chaos (0.0s)
+        // Disorients and sets traps
+        this.triggerLament();
+        this.attackVoidMines();
+
+        // WAVE 2: Zoning (1.5s)
+        // Forces you to move (Wall) while dodging ground hazards (Spikes)
+        setTimeout(() => {
+            if(!this.dead) {
+                this.attackVoidWall();
+                this.attackSpikes();
+            }
+        }, 1500);
+
+        // WAVE 3: Lockdown (3.5s - 2.0s gap)
+        // Pulls you in (Gravity) and snipes you (Lasers/Cannon) while you are stuck
+        setTimeout(() => {
+            if(!this.dead) {
+                this.attackGravityWell();
+                this.attackOrbitalLasers(); 
+                this.fireVoidCannon();
+            }
+        }, 3500);
+
+        // WAVE 4: Aggression (5.5s - 2.0s gap)
+        // Boss and Clones chase you down while beams cut off angles
+        setTimeout(() => {
+            if(!this.dead) {
+                this.attackShadowClones();
+                this.attackMultiBeam();
+                this.attackLeapPunch();
+            }
+        }, 5500);
+
+        // WAVE 5: The Nukes (7.5s - 2.0s gap)
+        // Massive AOE damage
+        setTimeout(() => {
+            if(!this.dead) {
+                this.attackMeteorRain();
+                this.attackVoidBomb();
+            }
+        }, 7500);
+
+        // FINISHER (9.5s - 2.0s gap)
+        setTimeout(() => {
+            if(!this.dead) this.attackGrandSlam();
+        }, 9500);
+    }
     addArmor() {
         const plateL = new THREE.Mesh(GEOS.plate, MATS.armorGold); plateL.position.set(-0.8, 2.2, 0); plateL.rotation.z = 0.5; this.mesh.add(plateL);
         const plateR = new THREE.Mesh(GEOS.plate, MATS.armorGold); plateR.position.set(0.8, 2.2, 0); plateR.rotation.z = -0.5; this.mesh.add(plateR);
     }
 
     selectAttack() {
-        const allies = entities.filter(e => e.faction === 'ally').length;
         const r = Math.random();
-        if(allies > 8 && r < 0.4) { this.attackGrandSlam(); return; }
-        if(r < 0.2) this.triggerLament(); 
-        else if(r < 0.4) this.attackSpikes(); 
-        else if(r < 0.55) this.attackMeteorRain(true); 
-        else if(r < 0.70) this.attackMultiBeam(); 
-        else if(r < 0.85) this.attackLeapPunch(); 
+        // Updated rotation with new abilities
+        if(r < 0.10) this.attackShadowClones();
+        else if(r < 0.20) this.attackVoidWall();
+        else if(r < 0.30) this.attackOrbitalLasers();
+        else if(r < 0.40) this.attackVoidMines();
+        else if(r < 0.50) this.attackGravityWell();
+        else if(r < 0.60) this.attackSpikes(); 
+        else if(r < 0.70) this.attackMeteorRain(true); 
+        else if(r < 0.80) this.attackMultiBeam(); 
+        else if(r < 0.90) this.attackLeapPunch(); 
         else this.fireVoidCannon();
     }
     
@@ -649,7 +729,172 @@ class BossEntity extends Entity {
              }
         }
     }
-    
+
+    // --- NEW ABILITY 1: VOID WALL ---
+// --- UPDATED ABILITY: VOID WALL (NO KNOCKBACK) ---
+    attackVoidWall() {
+        showBanner('wrath-banner', 2000, "No huzz");
+        this.setAnim('smash');
+        const wallGeo = new THREE.BoxGeometry(60, 15, 2);
+        const wall = new THREE.Mesh(wallGeo, MATS.projVoid);
+        
+        // Spawn behind boss
+        const startPos = this.mesh.position.clone();
+        const dir = reusableVector.subVectors(playerObj.position, startPos).normalize();
+        dir.y = 0;
+        
+        wall.position.copy(startPos).add(dir.multiplyScalar(5));
+        wall.lookAt(playerObj.position.x, 7.5, playerObj.position.z);
+        scene.add(wall);
+        
+        let life = 0;
+        const wallInt = setInterval(() => {
+            life++;
+            wall.translateZ(0.8); // Move forward
+            
+            // Collision Logic
+            const wallBox = new THREE.Box3().setFromObject(wall);
+            if(wallBox.containsPoint(playerObj.position)) {
+                // FIXED: Only deal damage, DO NOT push/launch the player
+                damagePlayer(CONFIG.WALL_DMG);
+            }
+            
+            // VFX: Trail
+             particleSystem.emit({ pos: wall.position, vel: reusableVector.set(0,1,0), count: 5, life: 0.5, size: 2, color: new THREE.Color(0x800080), spread: 10 });
+
+            if(life > 200) { clearInterval(wallInt); scene.remove(wall); }
+        }, 16);
+    }
+    // --- NEW ABILITY 2: GRAVITY WELL ---
+    // Sucks player towards boss
+      attackGravityWell() {
+        showBanner('wrath-banner', 2000, "Stink aura");
+        this.setAnim('channel');
+        
+        // Visuals
+        const well = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), new THREE.MeshBasicMaterial({color:0x000000, wireframe:true}));
+        well.position.copy(this.mesh.position).add(new THREE.Vector3(0, 5, 0));
+        scene.add(well);
+        
+        let frames = 0;
+        const suckInt = setInterval(() => {
+            frames++;
+            well.scale.setScalar(1 + frames/10);
+            well.rotation.y += 0.2;
+            
+            // Physics: Pull ONLY the player
+            const pullDir = reusableVector.subVectors(this.mesh.position, playerObj.position).normalize();
+            const dist = this.mesh.position.distanceTo(playerObj.position);
+            
+            if(dist > 5) {
+                playerObj.position.add(pullDir.multiplyScalar(0.4)); // Pull strength
+            } else {
+                damagePlayer(2); // Damage if too close
+            }
+            
+            // REMOVED: entities.forEach loop (Minions are no longer affected)
+
+            // NERFED DURATION: 94 frames * 16ms ~= 1.5 seconds (was 120 frames)
+            if(frames > 60) { 
+                clearInterval(suckInt); 
+                scene.remove(well); 
+                this.setAnim('idle'); 
+            }
+        }, 16);
+    }
+    // --- NEW ABILITY 3: ORBITAL LASERS ---
+    // Spawns vertical lasers around the player
+    attackOrbitalLasers() {
+        // No banner, just happens
+        this.setAnim('channel');
+        const spot = playerObj.position.clone();
+        
+        for(let i=0; i<10; i++) {
+            setTimeout(() => {
+                const offsetX = (Math.random() - 0.5) * 25;
+                const offsetZ = (Math.random() - 0.5) * 25;
+                const hitPos = new THREE.Vector3(spot.x + offsetX, 0, spot.z + offsetZ);
+                
+                // Warning
+                const warn = new THREE.Mesh(new THREE.CircleGeometry(2, 16), MATS.beamWarn);
+                warn.rotation.x = -Math.PI/2; warn.position.copy(hitPos); warn.position.y = 0.2;
+                scene.add(warn);
+                
+                setTimeout(() => {
+                    scene.remove(warn);
+                    // Beam
+                    const beam = new THREE.Mesh(GEOS.beam, MATS.railgunBeam);
+                    beam.position.copy(hitPos).add(new THREE.Vector3(0, 50, 0));
+                    beam.scale.set(2, 100, 2);
+                    scene.add(beam);
+                    
+                    triggerScreenShake(0.1, 0.1);
+                    if(playerObj.position.distanceTo(hitPos) < 3) damagePlayer(CONFIG.LASER_DMG);
+                    
+                    setTimeout(() => scene.remove(beam), 300);
+                }, 800);
+            }, i * 200);
+        }
+    }
+
+    // --- NEW ABILITY 4: SHADOW CLONES ---
+    // Dashes at player
+    attackShadowClones() {
+        this.setAnim('spin');
+        for(let i=0; i<3; i++) {
+            setTimeout(() => {
+                const clone = createChimpMesh(false);
+                clone.traverse((c) => { if(c.isMesh) c.material = MATS.voidTwin; });
+                clone.position.copy(this.mesh.position).add(new THREE.Vector3((Math.random()-0.5)*10, 0, (Math.random()-0.5)*10));
+                scene.add(clone);
+                
+                const start = clone.position.clone();
+                const end = playerObj.position.clone();
+                let f = 0;
+                
+                const dashInt = setInterval(() => {
+                    f += 0.05;
+                    clone.position.lerpVectors(start, end, f);
+                    if(f >= 1) {
+                        clearInterval(dashInt);
+                        if(clone.position.distanceTo(playerObj.position) < 4) damagePlayer(CONFIG.CLONE_DMG);
+                         particleSystem.emit({ pos: clone.position, vel: reusableVector.set(0,1,0), count: 20, life: 0.5, size: 1, color: new THREE.Color(0x800080), spread: 5 });
+                        scene.remove(clone);
+                    }
+                }, 16);
+            }, i * 300);
+        }
+    }
+
+    // --- NEW ABILITY 5: VOID MINES ---
+    // Spawns mines that explode after delay
+    attackVoidMines() {
+        showBanner('wrath-banner', 2000, "MINEFIELD");
+        this.setAnim('smash');
+        for(let i=0; i<6; i++) {
+            const pos = playerObj.position.clone().add(new THREE.Vector3((Math.random()-0.5)*40, 0, (Math.random()-0.5)*40));
+            const mine = new THREE.Mesh(new THREE.OctahedronGeometry(1), MATS.elite);
+            mine.position.copy(pos); mine.position.y = 1;
+            scene.add(mine);
+            
+            // Pulse effect
+            let ticks = 0;
+            const mineInt = setInterval(() => {
+                ticks++;
+                mine.rotation.x += 0.1; mine.rotation.y += 0.1;
+                mine.scale.setScalar(1 + Math.sin(ticks*0.5)*0.3);
+                
+                if(ticks > 120) { // Explode after 2s
+                    clearInterval(mineInt);
+                    scene.remove(mine);
+                    particleSystem.emit({ pos: pos, vel: reusableVector.set(0,2,0), count: 50, life: 1.0, size: 1.5, color: new THREE.Color(0xff0000), spread: 10 });
+                    if(playerObj.position.distanceTo(pos) < 8) damagePlayer(CONFIG.MINE_DMG);
+                }
+            }, 16);
+        }
+    }
+
+    // --- EXISTING ABILITIES (Kept for Cataclysm) ---
     triggerLament() {
         showBanner('lament-banner', 3000, "I Love CCQ");
         this.setAnim('channel');
@@ -661,7 +906,7 @@ class BossEntity extends Entity {
     }
 
     attackVoidBomb() {
-        showBanner('wrath-banner', 3000, "Gas bomb");
+        // showBanner('wrath-banner', 3000, "Gas bomb"); // Removed banner to reduce clutter during cataclysm
         this.setAnim('smash');
         const bomb = new THREE.Mesh(new THREE.SphereGeometry(6, 32, 32), MATS.projVoid);
         bomb.position.set(0, 50, 0); scene.add(bomb);
@@ -694,22 +939,6 @@ class BossEntity extends Entity {
                 this.setAnim('idle');
             }
         }, 16);
-    }
-
-
-    
-    attackCataclysm() {
-        showBanner('wrath-banner', 4000, "Crashout");
-        this.setAnim('spin');
-        this.attackMeteorRain(true); 
-        setTimeout(() => this.attackMultiBeam(), 2000);
-        setTimeout(() => this.attackSpikes(), 3000);
-        setTimeout(() => this.activateMoroccoRage(), 5000);
-        setTimeout(() => this.fireVoidCannon(), 6000);
-        setTimeout(() => this.attackMultiBeam(), 7000);
-        setTimeout(() => this.attackVoidBomb(), 8000);
-        
-        
     }
 
     attackGrandSlam() {
@@ -926,7 +1155,7 @@ function handleAbilityInput(k) {
     if(!gameActive || ascensionCinematic > 0 || interventionCinematic > 0) return;
     
     if(k === '1' && playerStats.cooldowns['1'] <= 0) {
-        playerStats.shield += 70; playerStats.health += 30;
+        playerStats.shield += 250; playerStats.health += 70;
         spawnEntity('guardian', playerObj.position);
         const shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(2, 16, 16), new THREE.MeshBasicMaterial({color: 0x00ffff, transparent:true, opacity: 0.3}));
         shieldMesh.position.copy(playerObj.position); scene.add(shieldMesh);
@@ -1079,44 +1308,97 @@ document.addEventListener('mousedown', (e) => {
     }
 });
 
+
+
+
+// Helper to get the exact tip of the gun
+function getMuzzlePosition(weaponGroup, zOffset) {
+    // Clone position so we don't mess up the actual object
+    const v = new THREE.Vector3(0, 0.05, zOffset); 
+    v.applyMatrix4(weaponGroup.matrixWorld);
+    return v;
+}
+
+// Helper for expanding energy rings (Aura)
+function spawnEnergyRing(pos, color, scaleSpeed) {
+    const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.5, 0.05, 8, 16), 
+        new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 1.0 })
+    );
+    ring.position.copy(pos);
+    ring.lookAt(cameraWorldPos.clone().add(cameraWorldDir)); // Face shot direction
+    scene.add(ring);
+    
+    let s = 1;
+    const int = setInterval(() => {
+        s += scaleSpeed;
+        ring.scale.set(s, s, 1);
+        ring.material.opacity -= 0.1;
+        if(ring.material.opacity <= 0) {
+            clearInterval(int);
+            scene.remove(ring);
+        }
+    }, 16);
+}
+
+
+
+
+    
 function fireRailgun() {
     raycaster.setFromCamera({x: 0, y: 0}, camera);
     const intersects = raycaster.intersectObjects(entities.map(e => e.mesh), true);
     
+    // 1. Get Origin from WEAPON MUZZLE, not camera center
+    const muzzlePos = getMuzzlePosition(weaponModels.railgun, -1.2); // -1.2 is tip of barrel
+    
     camera.getWorldPosition(cameraWorldPos);
     camera.getWorldDirection(cameraWorldDir);
+    
+    // Calculate End Point
     const endPoint = reusableVector.copy(cameraWorldPos).add(cameraWorldDir.multiplyScalar(300));
     let hitPoint = endPoint.clone();
-
-    // Determine impact point
     if(intersects.length > 0) hitPoint = intersects[0].point;
 
-    // VFX: Neon Blue Beam
+    // 2. VFX: Neon Blue Beam (Core)
     const beam = new THREE.Mesh(GEOS.beam, MATS.railgunBeam);
-    const distance = cameraWorldPos.distanceTo(hitPoint);
-    beam.position.copy(cameraWorldPos).lerp(hitPoint, 0.5);
-    beam.scale.set(0.6, distance, 0.6); // Thick beam
+    const distance = muzzlePos.distanceTo(hitPoint);
+    beam.position.copy(muzzlePos).lerp(hitPoint, 0.5);
+    beam.scale.set(0.6, distance, 0.6);
     beam.lookAt(hitPoint);
     beam.rotateX(Math.PI / 2);
     scene.add(beam);
-    setTimeout(() => scene.remove(beam), 100);
+    
+    // 3. VFX: Outer Glow Beam (Aura)
+    const outerBeam = new THREE.Mesh(GEOS.beam, new THREE.MeshBasicMaterial({
+        color: 0x00ffff, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending
+    }));
+    outerBeam.position.copy(beam.position);
+    outerBeam.rotation.copy(beam.rotation);
+    outerBeam.scale.set(1.5, distance, 1.5);
+    scene.add(outerBeam);
 
-    // EXPLOSION & AOE DAMAGE
+    setTimeout(() => { scene.remove(beam); scene.remove(outerBeam); }, 100);
+
+    // 4. VFX: Muzzle Flash & Rings
+    spawnEnergyRing(muzzlePos, 0x00ffff, 1.5);
+    particleSystem.emit({ pos: muzzlePos, vel: cameraWorldDir.clone().multiplyScalar(5), count: 20, life: 0.3, size: 0.5, color: new THREE.Color(0x00ffff), spread: 2 });
+
+    // 5. VFX: Impact
     particleSystem.emit({ pos: hitPoint, vel: reusableVector.set(0,0,0), count: 60, life: 1.2, size: 2.0, color: new THREE.Color(0x00ffff), spread: 15 });
     triggerScreenShake(0.3, 0.3);
 
+    // Damage Logic
     entities.forEach(e => {
         if(!e.dead && e.faction === 'enemy') {
             const dist = e.mesh.position.distanceTo(hitPoint);
-            // Direct Hit or AoE
             if (dist < 10) {
                 e.takeDamage(CONFIG.RAILGUN_DMG * playerStats.damageBuff * (dist < 3 ? 1.0 : 0.5), true);
-                e.mesh.position.y += 0.5; // Slight knockup
+                e.mesh.position.y += 0.5; 
             }
         }
     });
 }
-
 
 function shootProjectile(isRifle) {
     const p = getProjectile();
