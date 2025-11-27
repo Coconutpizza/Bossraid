@@ -1,0 +1,1720 @@
+<!-- START OF FILE fight.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Classroom</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', Courier, monospace; user-select: none; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; z-index: 5;}
+        #boss-hud { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 600px; text-align: center; }
+        #boss-name { color: #d4af37; font-size: 32px; font-weight: 900; text-transform: uppercase; text-shadow: 0 0 15px #d4af37; margin-bottom: 5px; letter-spacing: 2px; }
+        #boss-hp-bg { width: 100%; height: 30px; background: #111; border: 4px solid #d4af37; position: relative; box-shadow: 0 0 20px black; transform: skewX(-20deg); }
+        #boss-hp-fill { 
+    height: 100%; 
+    background: linear-gradient(90deg, #800, #f00); 
+    width: 100%; 
+    max-width: 100%; /* PREVENTS OVERFLOW */
+    transition: width 0.1s; 
+}
+     #boss-shield-fill { 
+    height: 100%; 
+    background: #d000ff; /* PURPLE COLOR */
+    width: 0%; 
+    max-width: 100%; /* PREVENTS OVERFLOW */
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    opacity: 0.7; 
+    mix-blend-mode: lighten; /* Makes purple pop over the red HP */
+    transition: width 0.1s; 
+}
+        #boss-wrath-bg { width: 100%; height: 8px; background: #222; margin-top: 5px; border: 1px solid #555; position: relative; }
+        #boss-wrath-fill { height: 100%; background: #b0f; width: 0%; transition: width 0.2s; box-shadow: 0 0 10px #b0f; }
+        #boss-stage { margin-top: 5px; color: #ff0000; font-weight: bold; font-size: 24px; text-shadow: 0 0 10px red; }
+        #wrath-status { font-size: 16px; color: #aaa; margin-top: 2px; font-weight: bold; }
+        .player-stats { position: absolute; bottom: 20px; left: 20px; width: 350px; }
+        .bar-wrap { margin-bottom: 10px; }
+        .bar-label { color: #fff; font-size: 16px; font-weight: bold; text-shadow: 1px 1px 0 #000; }
+        .bar-bg { width: 100%; height: 20px; background: rgba(0,0,0,0.6); border: 2px solid #777; position: relative; }
+.bar-fill { 
+    height: 100%; 
+    max-width: 100%; /* PREVENTS OVERFLOW */
+    transition: width 0.2s; 
+}
+        #p-hp-fill { background: #0f0; width: 100%; }
+        #p-shield-fill { background: #00f; width: 0%; position: absolute; top: 0; left: 0; opacity: 0.7; }
+        #ammo-counter { color: #0ff; font-weight: bold; font-size: 24px; display: none; text-shadow: 0 0 5px #0ff; margin-top: 5px;}
+        #mech-indicator { color: #00ffff; font-weight: bold; font-size: 20px; text-shadow: 0 0 10px #00ffff; display: none; margin-top: 5px; }
+        #ability-panel { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 15px; }
+        .ability-box { width: 70px; height: 70px; background: rgba(0,0,0,0.8); border: 2px solid #777; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; transition: all 0.2s; }
+        .ability-box.ready { border-color: #ffd700; color: #ffd700; box-shadow: 0 0 15px #ffd700; transform: scale(1.05); }
+        .ability-box.ascend { border-color: #ffffff; color: #ffffff; box-shadow: 0 0 30px #ffffff; animation: pulse 0.5s infinite; display: none; }
+        .cooldown-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); height: 0%; transition: height 0.1s; }
+        .key-bind { position: absolute; top: 2px; left: 5px; font-size: 12px; color: #ccc; font-weight: bold; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; background: rgba(255, 255, 255, 0.9); border: 2px solid #000; border-radius: 50%; transform: translate(-50%, -50%); }
+        .banner { position: absolute; width: 100%; text-align: center; opacity: 0; transform: scale(0.5); transition: all 0.2s ease; pointer-events: none; text-shadow: 2px 2px 0 #000; z-index: 5; font-weight: 900; }
+        .banner.active { opacity: 1; transform: scale(1); }
+        #lament-banner { top: 20%; font-size: 60px; color: #800080; text-shadow: 0 0 20px #ff00ff; }
+        #wrath-banner { top: 35%; font-size: 40px; color: #ff6600; }
+        #stage-banner { top: 40%; font-size: 70px; color: #ff0000; text-shadow: 0 0 30px red; text-transform: uppercase; }
+        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 10, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; pointer-events: auto; z-index: 20; }
+        h1 { color: #d4af37; text-transform: uppercase; font-size: 50px; margin-bottom: 10px;}
+        p { font-size: 18px; color: #ddd; max-width: 700px; text-align: center; margin: 5px 0; }
+        .key { color: #d4af37; border: 1px solid #d4af37; padding: 2px 6px; border-radius: 4px; }
+        button { margin-top: 30px; padding: 20px 50px; font-size: 24px; background: #d4af37; border: none; cursor: pointer; color: #000; font-weight: bold; transition: transform 0.2s; }
+        button:hover { transform: scale(1.1); background: #fff; }
+        #mech-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 5px solid cyan; box-shadow: inset 0 0 50px cyan; pointer-events: none; display: none; z-index: 2; }
+        #white-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 2s; }
+        #cinematic-bars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; flex-direction: column; justify-content: space-between; z-index: 15; }
+        .c-bar { width: 100%; height: 12%; background: black; }
+        #boss-shield-msg { position: absolute; top: 60px; width: 100%; text-align: center; color: cyan; font-weight: bold; font-size: 20px; display: none; text-shadow: 0 0 10px cyan; }
+    </style>
+</head>
+<body>
+
+<div id="white-screen"></div>
+<div id="mech-overlay"></div>
+<div id="cinematic-bars"><div class="c-bar"></div><div class="c-bar"></div></div>
+
+<div id="ui-layer">
+    <div id="boss-hud">
+        <div id="boss-name">General Average</div>
+        <div id="boss-hp-bg">
+            <div id="boss-hp-fill"></div>
+            <div id="boss-shield-fill"></div>
+        </div>
+        <div id="boss-wrath-bg"><div id="boss-wrath-fill"></div></div>
+        <div id="wrath-status">WRATH ACCUMULATING</div>
+        <div id="boss-shield-msg">SHIELDED: DESTROY SUMMONS</div>
+        <div id="boss-stage">STAGE 1: I need a piece</div>
+    </div>
+
+    <div class="player-stats">
+        <div class="bar-wrap">
+            <div class="bar-label">HP</div>
+            <div class="bar-bg">
+                <div class="bar-fill" id="p-hp-fill"></div>
+                <div class="bar-fill" id="p-shield-fill"></div>
+            </div>
+        </div>
+        <div id="ammo-counter">RIFLE: <span id="ammo-val">--</span></div>
+        <div id="mech-indicator">RAILGUN ARMED</div>
+        <div id="buff-text" style="display:none; color: #ffd700; font-weight: bold; font-size: 20px; text-shadow: 0 0 10px yellow;">Sultan sacrifice</div>
+    </div>
+
+    <div id="ability-panel">
+        <div class="ability-box" id="ab-1"><span class="key-bind">1</span>🛡️<div class="cooldown-overlay" id="cd-1"></div></div>
+        <div class="ability-box" id="ab-2"><span class="key-bind">2</span><span id="icon-2">🔫</span><div class="cooldown-overlay" id="cd-2"></div></div>
+        <div class="ability-box" id="ab-3"><span class="key-bind">3</span>⚔️<div class="cooldown-overlay" id="cd-3"></div></div>
+        <div class="ability-box" id="ab-f"><span class="key-bind">F</span>💀<div class="cooldown-overlay" id="cd-f"></div></div>
+        <div class="ability-box" id="ab-e"><span class="key-bind">E</span>🤖<div class="cooldown-overlay" id="cd-e"></div></div>
+        <div class="ability-box" id="ab-shift"><span class="key-bind">SHFT</span>Dash<div class="cooldown-overlay" id="cd-shift"></div></div>
+        <div class="ability-box ascend" id="ab-4"><span class="key-bind">x</span>𝓓𝓲𝓭𝓭𝔂👅</div>
+    </div>
+
+    <div id="lament-banner" class="banner">give me a piece</div>
+    <div id="wrath-banner" class="banner">TACTICAL RETREAT</div>
+    <div id="stage-banner" class="banner">STAGE CLEARED</div>
+
+    <div id="crosshair"></div>
+</div>
+
+<div id="overlay">
+    <h1>can i have a piece</h1>
+    <p>Can i have a sip</p>
+    <br>
+    <p><span class="key">W</span> Front <span class="key">S</span> Back <span class="key">A</span> Left <span class="key">D</span> Right</p>
+    <p><span class="key">1</span> Shield | <span class="key">2</span> Rifle | <span class="key">Shift</span> Leap</p>
+    <p><span class="key">3</span> summon (<strong>Instant Deployment</strong>)</p>
+    <p><span class="key">F</span> <strong>Sultan sacrifice</strong> (Sacrifice Army)</p>
+    <p><span class="key">E</span> <strong>Railgun</strong> | <span class="key">4</span> <strong>𝓓𝓲𝓭𝓭𝔂 𝓽𝓲𝓶𝓮👅</strong> (Stage 3)</p>
+    <button id="start-btn">Give him a sip and a piece</button>
+</div>
+
+<script type="importmap">
+  { "imports": { 
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+// Buffed Stats
+const CONFIG = {
+    BOSS_MAX_HP: 100000, 
+    PLAYER_MAX_HP: 200,
+    PLAYER_SPEED: 11.0,
+    BOSS_SPEED: 14.0, 
+    BOSS_DMG: 65, 
+    RIFLE_DMG: 125, RIFLE_RATE: 120, 
+    DIRECT_HIT_DMG: 4000, DIRECT_HIT_CD: 2000,
+    // Minion Stats
+    TWIN_HP: 1950, VOID_TWIN_HP: 4500, ELITE_HP: 3700, TITAN_HP: 8500, FOOTMAN_HP: 2650, 
+    ALLY_HP: 700, GUARDIAN_HP: 2000,
+    THROW_CD: 300, MECH_CD: 30000, MECH_DURATION: 16000,
+    LAMENT_DMG: 90, RAILGUN_DMG: 1050, RAILGUN_CD: 50, MECH_SHIELD: 3000,
+    VOID_CANNON_DMG: 120,
+    // New Ability Stats
+    WALL_DMG: 80,
+    LASER_DMG: 100,
+    CLONE_DMG: 80,
+    MINE_DMG: 220
+};
+
+const GEOS = {
+    box: new THREE.BoxGeometry(1, 1, 1),
+    sphere: new THREE.SphereGeometry(1, 12, 12),
+    cyl: new THREE.CylinderGeometry(1, 1, 1, 8),
+    capsule: new THREE.CapsuleGeometry(0.15, 0.4, 4, 8),
+    beam: new THREE.CylinderGeometry(1, 1, 1, 6),
+    plate: new THREE.BoxGeometry(1.2, 1.2, 0.2),
+    torus: new THREE.TorusGeometry(1, 0.2, 8, 20)
+};
+
+const MATS = {
+    white: new THREE.MeshBasicMaterial({color: 0xffffff}),
+    bossFur: new THREE.MeshStandardMaterial({color: 0x4a3b2a, roughness: 0.8}),
+    bossSkin: new THREE.MeshStandardMaterial({color: 0xe0d5c1, roughness: 0.6}),
+    twinFur: new THREE.MeshStandardMaterial({color: 0x222222, roughness: 0.9}),
+    voidTwin: new THREE.MeshStandardMaterial({color: 0x800080, emissive: 0x500050, emissiveIntensity: 2}),
+    elite: new THREE.MeshStandardMaterial({color: 0xff0000, emissive: 0x660000, emissiveIntensity: 1.5}),
+    titan: new THREE.MeshStandardMaterial({color: 0x880000, emissive: 0x330000, emissiveIntensity: 2}),
+    footman: new THREE.MeshStandardMaterial({color: 0x660000, roughness: 0.7}),
+    guardian: new THREE.MeshStandardMaterial({color: 0x0088ff, emissive: 0x003388, emissiveIntensity: 2}),
+    soldier: new THREE.MeshStandardMaterial({color: 0x88ccff, roughness: 0.4}),
+    armorGold: new THREE.MeshStandardMaterial({color: 0xffd700, metalness: 0.8, roughness: 0.2, emissive: 0x443300, emissiveIntensity: 1}),
+    projPlayer: new THREE.MeshStandardMaterial({color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 5}),
+    projDate: new THREE.MeshStandardMaterial({color: 0xffd700, emissive: 0xffd700, emissiveIntensity: 5}),
+    projEnemy: new THREE.MeshStandardMaterial({color: 0xff4444, emissive: 0xff4444, emissiveIntensity: 5}),
+    projVoid: new THREE.MeshStandardMaterial({color: 0x800080, emissive: 0xaa00aa, emissiveIntensity: 6}),
+    projMeteor: new THREE.MeshStandardMaterial({color: 0xff4400, emissive: 0xff4400, emissiveIntensity: 8}),
+    beamWarn: new THREE.MeshBasicMaterial({color: 0xff0000, transparent:true, opacity:0.3, side:THREE.DoubleSide}),
+    beamHit: new THREE.MeshBasicMaterial({color: 0x4b0082, emissive: 0x8a2be2, emissiveIntensity: 4}),
+    summonBeam: new THREE.MeshBasicMaterial({color: 0xffffaa, transparent:true, opacity:0.5, emissive: 0xffff00, emissiveIntensity: 3}),
+    spike: new THREE.MeshStandardMaterial({color: 0x440044, emissive: 0x660066, emissiveIntensity: 3}),
+    rifleMat: new THREE.MeshStandardMaterial({color: 0x333333, metalness: 0.8, roughness: 0.2}),
+    railgunMat: new THREE.MeshStandardMaterial({color: 0x111111, metalness: 0.9, roughness: 0.1, emissive: 0x002222}),
+    railgunGlow: new THREE.MeshStandardMaterial({color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 5}),
+    railgunBeam: new THREE.MeshBasicMaterial({color: 0x88ffff, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending})
+};
+
+let scene, camera, renderer, composer;
+let playerObj, playerMesh, weaponModels = { rifle: null, railgun: null };
+let entities = []; 
+let projectilePool = [];
+const PROJECTILE_LIGHT_POOL_SIZE = 15;
+let projectileLightPool = [];
+let projectileLightIndex = 0;
+
+let gameActive = false;
+let cinematicMode = false;
+let cinematicTimer = 0;
+let lastTime = performance.now();
+let isMouseDown = false;
+const keys = { w: false, a: false, s: false, d: false };
+
+let playerStats = { 
+    hp: 300, maxHp: 300, shield: 150, 
+    rifleActive: false, rifleAmmo: 0,
+    throwTimer: 0, attackTimer: 0, directHitTimer: 0,
+    mechActive: false, mechTimer: 0,
+    ascended: false, invincible: false,
+    damageBuff: 1.0, buffTimer: 0,
+    lamentShieldTimer: 0,
+    leaping: false, leapTarget: new THREE.Vector3(),
+    cooldowns: { '1': 0, '2': 0, '3': 0, 'e': 0, 'f': 0, 'shift': 0 }
+};
+
+const CD_MAX = { '1': 10000, '2': 8000, '3': 8000, 'e': 20000, 'f': 15000, 'shift': 700 };
+let boss = null;
+let ascensionCinematic = 0;
+let interventionCinematic = 0;
+let particleSystem;
+let cameraShake = { time: 0, intensity: 0 };
+
+const reusableVector = new THREE.Vector3();
+const playerFwd = new THREE.Vector3();
+const playerRgt = new THREE.Vector3();
+const moveDir = new THREE.Vector3();
+const raycaster = new THREE.Raycaster();
+const cameraWorldPos = new THREE.Vector3();
+const cameraWorldDir = new THREE.Vector3();
+
+function init() {
+    scene = new THREE.Scene();
+    // CLEAR BACKGROUND
+    scene.background = new THREE.Color(0x222222); 
+    scene.fog = null; // No Fog
+
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    document.body.appendChild(renderer.domElement);
+
+    // INCREASED LIGHTING
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 2.0);
+    scene.add(hemisphereLight);
+    const sunlight = new THREE.DirectionalLight(0xffffff, 1.5);
+    sunlight.position.set(50, 100, 50);
+    sunlight.castShadow = true;
+    sunlight.shadow.mapSize.width = 2048; 
+    sunlight.shadow.mapSize.height = 2048;
+    sunlight.shadow.camera.near = 0.5;
+    sunlight.shadow.camera.far = 500;
+    scene.add(sunlight);
+    
+    const renderPass = new RenderPass(scene, camera);
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.8, 0.3, 0.85);
+    composer = new EffectComposer(renderer);
+    composer.addPass(renderPass);
+    composer.addPass(bloomPass);
+
+    createEnvironment();
+
+    playerObj = new THREE.Object3D();
+    playerObj.position.set(0, 1.7, 0);
+    playerObj.add(camera);
+    scene.add(playerObj);
+
+    createWeaponModels();
+
+    playerMesh = createHumanoidMesh(MATS.soldier, false);
+    playerMesh.visible = false;
+    playerObj.add(playerMesh);
+    playerMesh.position.y = -1.7;
+
+    for(let i=0; i<150; i++) {
+        const p = new THREE.Mesh(GEOS.sphere, MATS.projPlayer);
+        p.visible = false;
+        scene.add(p);
+        projectilePool.push({ mesh: p, light: null, active: false, velocity: new THREE.Vector3(), life: 0, type: '', isPlayer: false, warningMesh: null });
+    }
+    
+    for(let i=0; i<PROJECTILE_LIGHT_POOL_SIZE; i++) {
+        const light = new THREE.PointLight(0xffffff, 0, 10);
+        scene.add(light);
+        projectileLightPool.push(light);
+    }
+    
+    particleSystem = new ParticleSystem(scene, 8000);
+
+    document.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; handleAbilityInput(e.key.toLowerCase()); });
+    document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+    document.addEventListener('mousedown', (e) => { if(e.button === 0) isMouseDown = true; });
+    document.addEventListener('mouseup', (e) => { if(e.button === 0) isMouseDown = false; });
+    document.addEventListener('mousemove', (e) => {
+        if (document.pointerLockElement === document.body && !cinematicMode && ascensionCinematic === 0 && interventionCinematic === 0) {
+            playerObj.rotation.y -= e.movementX * 0.002;
+            camera.rotation.x -= e.movementY * 0.002;
+            camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
+        }
+    });
+
+    document.getElementById('start-btn').addEventListener('click', () => { 
+        document.getElementById('overlay').style.display = 'none';
+        try { document.body.requestPointerLock(); } catch(e){}
+        startGame(); 
+    });
+
+    window.addEventListener('resize', () => { 
+        camera.aspect = window.innerWidth/window.innerHeight; 
+        camera.updateProjectionMatrix(); 
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+    });
+    
+    animate();
+}
+
+function createWeaponModels() {
+    // RIFLE
+    const rifle = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.15, 0.8), MATS.rifleMat);
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1, 8), MATS.rifleMat);
+    barrel.rotation.x = -Math.PI/2; barrel.position.z = -0.5;
+    const mag = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.2, 0.1), MATS.rifleMat);
+    mag.position.set(0, -0.1, 0.1);
+    rifle.add(body, barrel, mag);
+    rifle.position.set(0.3, -0.2, -0.5);
+    rifle.visible = false;
+    camera.add(rifle);
+    weaponModels.rifle = rifle;
+
+    // DETAILED RAILGUN
+    const railgun = new THREE.Group();
+    const rBody = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.8), MATS.railgunMat);
+    
+    // Glowing Rails
+    const railGeo = new THREE.BoxGeometry(0.05, 0.05, 1.4);
+    const rail1 = new THREE.Mesh(railGeo, MATS.railgunGlow);
+    const rail2 = new THREE.Mesh(railGeo, MATS.railgunGlow);
+    rail1.position.set(-0.15, 0.05, -0.6); 
+    rail2.position.set(0.15, 0.05, -0.6);
+
+    // Coils
+    const coilGeo = new THREE.TorusGeometry(0.15, 0.02, 8, 16);
+    const coil1 = new THREE.Mesh(coilGeo, MATS.railgunGlow); coil1.position.set(0, 0.05, -0.4);
+    const coil2 = new THREE.Mesh(coilGeo, MATS.railgunGlow); coil2.position.set(0, 0.05, -0.8);
+    const coil3 = new THREE.Mesh(coilGeo, MATS.railgunGlow); coil3.position.set(0, 0.05, -1.2);
+
+    // Scope
+    const scopeMount = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.1), MATS.railgunMat); scopeMount.position.set(0, 0.2, 0);
+    const scopeTube = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.4, 12), MATS.railgunMat); scopeTube.rotation.z = Math.PI/2; scopeTube.position.set(0, 0.25, 0);
+
+    railgun.add(rBody, rail1, rail2, coil1, coil2, coil3, scopeMount, scopeTube);
+    railgun.position.set(0.5, -0.3, -0.6);
+    railgun.visible = false;
+    camera.add(railgun);
+    weaponModels.railgun = railgun;
+}
+
+function createEnvironment() {
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8, metalness: 0.2 });
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8, metalness: 0.2 });
+    const pillarInst = new THREE.InstancedMesh(GEOS.cyl, pillarMat, 60);
+    const dummy = new THREE.Object3D();
+    for(let i=0; i<60; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const r = 50 + Math.random() * 200;
+        dummy.position.set(Math.cos(a)*r, 10, Math.sin(a)*r);
+        dummy.scale.set(4, 30, 4); 
+        dummy.updateMatrix();
+        pillarInst.setMatrixAt(i, dummy.matrix);
+    }
+    pillarInst.castShadow = true;
+    pillarInst.receiveShadow = true;
+    scene.add(pillarInst);
+}
+
+class ParticleSystem {
+    constructor(scene, count) {
+        this.scene = scene;
+        this.count = count;
+        const geom = new THREE.BufferGeometry();
+        const pos = new Float32Array(count * 3);
+        geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        this.velocities = new Array(count).fill(null).map(() => new THREE.Vector3());
+        this.lives = new Float32Array(count);
+        this.poolIndex = 0;
+        
+        const mat = new THREE.PointsMaterial({
+            size: 0.5, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
+        });
+        geom.setAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
+        this.points = new THREE.Points(geom, mat);
+        scene.add(this.points);
+    }
+    emit(options) {
+        const { pos, vel, count, life, size, color, spread } = options;
+        const posAttr = this.points.geometry.attributes.position;
+        const colorAttr = this.points.geometry.attributes.color;
+        for (let i = 0; i < count; i++) {
+            const idx = (this.poolIndex + i) % this.count;
+            posAttr.setXYZ(idx, pos.x, pos.y, pos.z);
+            this.velocities[idx].set(
+                vel.x + (Math.random() - 0.5) * spread,
+                vel.y + (Math.random() - 0.5) * spread,
+                vel.z + (Math.random() - 0.5) * spread
+            );
+            this.lives[idx] = life + Math.random() * 0.5 - 0.25;
+            colorAttr.setXYZ(idx, color.r, color.g, color.b);
+        }
+        this.poolIndex = (this.poolIndex + count) % this.count;
+        posAttr.needsUpdate = colorAttr.needsUpdate = true;
+    }
+    update(dt) {
+        const posAttr = this.points.geometry.attributes.position;
+        for (let i = 0; i < this.count; i++) {
+            if (this.lives[i] > 0) {
+                this.lives[i] -= dt;
+                if (this.lives[i] <= 0) {
+                    posAttr.setY(i, -1000); 
+                } else {
+                    posAttr.setXYZ(
+                        i,
+                        posAttr.getX(i) + this.velocities[i].x * dt,
+                        posAttr.getY(i) + this.velocities[i].y * dt,
+                        posAttr.getZ(i) + this.velocities[i].z * dt
+                    );
+                    this.velocities[i].y -= 2.0 * dt; 
+                }
+            }
+        }
+        posAttr.needsUpdate = true;
+    }
+}
+function triggerScreenShake(intensity, duration) {
+    cameraShake.intensity = intensity;
+    cameraShake.time = duration;
+}
+
+class Entity {
+    constructor(mesh, hp, maxHp, faction, name) {
+        this.mesh = mesh;
+        this.hp = hp; this.maxHp = maxHp; this.shield = 0;
+        this.faction = faction; this.name = name;
+        this.dead = false; this.stunTimer = 0;
+        this.attackAnimTimer = 0;
+        scene.add(this.mesh);
+        
+        if(name !== 'General Average') {
+            const canvas = document.createElement('canvas'); canvas.width = 32; canvas.height = 4;
+            this.hpCtx = canvas.getContext('2d');
+            this.hpTex = new THREE.CanvasTexture(canvas);
+            const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.hpTex }));
+            spr.scale.set(3, 0.3, 1); spr.position.y = (name === 'Void Titan' ? 6 : 3);
+            this.mesh.add(spr);
+            this.updateHealthBar();
+        }
+    }
+    swingArm() { this.attackAnimTimer = 0.3; }
+    kneel() { this.kneeling = true; }
+    takeDamage(amt, isPlayerSource = false) {
+        if(this.dead) return;
+        if(this.shield > 0) { if(this.shield >= amt) { this.shield -= amt; amt = 0; } else { amt -= this.shield; this.shield = 0; } }
+        this.hp -= amt;
+        particleSystem.emit({ pos: this.mesh.position.clone().add(reusableVector.set(0,2,0)), vel: reusableVector.set(0,1,0), count: 3, life: 0.5, size: 0.5, color: new THREE.Color(0xff0000), spread: 5 });
+        if(this.name !== 'General Average') this.updateHealthBar();
+        if(this.hp <= 0) { 
+             particleSystem.emit({ pos: this.mesh.position.clone().add(reusableVector.set(0,2,0)), vel: reusableVector.set(0,2,0), count: 50, life: 1.5, size: 1.0, color: new THREE.Color(0x880000), spread: 10 });
+            if(this.name === 'General Average') { triggerVictoryCinematic(); }
+            else { this.dead = true; scene.remove(this.mesh); }
+        }
+    }
+    updateHealthBar() {
+        if(!this.hpCtx) return;
+        const pct = Math.max(0, this.hp / this.maxHp);
+        this.hpCtx.fillStyle = '#500'; this.hpCtx.fillRect(0,0,32,4);
+        this.hpCtx.fillStyle = this.faction === 'enemy' ? '#f00' : '#0f0';
+        this.hpCtx.fillRect(0,0,32*pct,4);
+        this.hpTex.needsUpdate = true;
+    }
+}
+
+// 2. REPLACE THE ENTIRE BossEntity CLASS
+class BossEntity extends Entity {
+    constructor(pos) {
+        const mesh = createChimpMesh(true);
+        mesh.position.copy(pos);
+        super(mesh, CONFIG.BOSS_MAX_HP, CONFIG.BOSS_MAX_HP, 'enemy', 'General Average');
+        this.stage = 1;
+        this.retreatMode = false;
+        this.retreatTimer = 0;
+        this.actionTimer = 5000; 
+        this.wrath = 0;
+        this.wrathTriggers = {}; 
+        this.gloryMode = false;
+        this.gloryTimer = 0;
+        this.animState = 'idle'; 
+        this.animTimer = 0;
+        this.limbs = {
+            leftArm: mesh.getObjectByName('leftArm'),
+            rightArm: mesh.getObjectByName('rightArm')
+        };
+        this.addArmor(); 
+    }
+
+    takeDamage(amt, isPlayerSource) {
+        if(this.dead) return;
+        
+        if(this.stage === 5) {
+            const livingMinions = entities.filter(e => e.faction === 'enemy' && e !== this && !e.dead).length;
+            if(livingMinions > 0) {
+                document.getElementById('boss-shield-msg').style.display = 'block';
+                return; 
+            } else {
+                document.getElementById('boss-shield-msg').style.display = 'none';
+            }
+        }
+
+        if(this.actionTimer > 500) this.actionTimer -= 300; 
+        
+        let wGain = isPlayerSource ? 2.5 : 0.5;
+        this.addWrath(wGain);
+        
+        const finalDmg = this.retreatMode ? amt * 0.1 : amt;
+        super.takeDamage(finalDmg, isPlayerSource);
+        updateBossUI();
+        this.checkStage();
+    }
+    
+    addWrath(amount) {
+        this.wrath += amount;
+        if(this.wrath >= 100) {
+            this.wrath = 0; 
+            this.attackCataclysm(); // Trigger the full combo
+            this.wrathTriggers = {};
+            updateBossUI();
+        } else {
+            this.checkWrathThresholds();
+        }
+        updateBossUI();
+    }
+
+    checkWrathThresholds() {
+        if(this.wrath >= 20 && !this.wrathTriggers[20]) { this.wrathTriggers[20] = true; this.triggerLament(); }
+        if(this.wrath >= 25 && !this.wrathTriggers[25]) { this.wrathTriggers[20] = true; this.attackShadowClones(); }
+        if(this.wrath >= 30 && !this.wrathTriggers[30]) { this.wrathTriggers[20] = true; this.activateMoroccoRage(); }
+        //if(this.wrath >= 35 && !this.wrathTriggers[35]) { this.wrathTriggers[20] = true; this.attackVoidBomb(); }
+       // if(this.wrath >= 40 && !this.wrathTriggers[40]) { this.wrathTriggers[20] = true; this.attackOrbitalLasers(); }
+        if(this.wrath >= 45 && !this.wrathTriggers[45]) { this.wrathTriggers[20] = true; this.attackOrbitalLasers(); }
+      //  if(this.wrath >= 50 && !this.wrathTriggers[50]) { this.wrathTriggers[20] = true; this.attackMeteorRain(); }
+        if(this.wrath >= 55 && !this.wrathTriggers[55]) { this.wrathTriggers[20] = true; this.triggerLament(); }
+        //if(this.wrath >= 60 && !this.wrathTriggers[60]) { this.wrathTriggers[20] = true; this.attackLeapPunch(); }
+        if(this.wrath >= 70 && !this.wrathTriggers[70]) { this.wrathTriggers[40] = true; this.attackVoidMines(); } // Changed to new ability
+    //    if(this.wrath >= 80 && !this.wrathTriggers[80]) { this.wrathTriggers[60] = true; this.attackLeapPunch(); }
+        if(this.wrath >= 100 && !this.wrathTriggers[100]) { this.wrathTriggers[80] = true; this.attackCataclysm(); } // Changed to new ability
+    }
+
+    activateMoroccoRage() {
+        this.gloryMode = true; this.gloryTimer = 8000; 
+        this.setAnim('spin');
+        showBanner('wrath-banner', 4000, "Journée d'Examen");
+        entities.forEach(e => { if(e.faction === 'ally' && e.hp < 1000) e.takeDamage(9999); });
+        for(let i=0; i<6; i++) spawnEntity('void_twin', this.mesh.position); // Increased spawn
+    }
+
+    triggerRetreat() {
+        showBanner('wrath-banner', 3000, " TACTICAL RETREAT");
+        this.retreatMode = true; this.retreatTimer = 4000; this.shield += 8000;
+        // Basic jump logic
+        let dir = reusableVector.subVectors(this.mesh.position, playerObj.position).normalize();
+        if(this.mesh.position.length() > 200) dir.subVectors(reusableVector.set(0,0,0), this.mesh.position).normalize();
+        dir.y = 0;
+        let jumpFrames = 0;
+        const jumpInt = setInterval(() => {
+            this.mesh.position.add(dir.multiplyScalar(0.8));
+            this.mesh.lookAt(playerObj.position.x, this.mesh.position.y, playerObj.position.z);
+            this.mesh.position.y = Math.sin((jumpFrames/20)*Math.PI) * 10;
+            jumpFrames++;
+            if(jumpFrames > 20) { clearInterval(jumpInt); this.mesh.position.y = 0; }
+        }, 16);
+    }
+
+    checkStage() {
+        const pct = this.hp / this.maxHp;
+        let newStage = 1;
+        if(pct < 0.2) newStage = 5; else if(pct < 0.4) newStage = 4; else if(pct < 0.6) newStage = 3; else if(pct < 0.8) newStage = 2;
+        if(newStage > this.stage) { this.stage = newStage; this.triggerStageEvent(); }
+    }
+
+    // --- EXPANDED STAGE EVENTS ---
+    triggerStageEvent() {
+        this.wrath = 0; 
+        this.wrathTriggers = {};
+        let msg = "";
+        
+        // Helper to mass summon
+        const summonHorde = (elites, twins, titans) => {
+            for(let i=0; i<elites; i++) spawnEntity('elite', this.mesh.position);
+            for(let i=0; i<twins; i++) spawnEntity('twin', this.mesh.position);
+            for(let i=0; i<titans; i++) spawnEntity('titan', this.mesh.position);
+        };
+
+        switch(this.stage) {
+            case 2: 
+                msg = "STAGE 2: Crashout"; 
+                summonHorde(5, 10, 0);
+                this.attackGravityWell();
+                this.shield += this.maxHp * 0.20;
+                setTimeout(() => this.attackVoidWall(), 2000);
+                setTimeout(() => this.attackVoidWall(), 4000);
+                break;
+            case 3: 
+                msg = "STAGE 3: Lock in "; 
+                summonHorde(8, 12, 2);
+                document.getElementById('ab-4').style.display = 'flex'; // Unlock Diddy Time
+                this.attackCataclysm(); // First Cataclysm
+                setTimeout(() => this.attackOrbitalLasers(), 3000);
+                break;
+            case 4: 
+                msg = "STAGE 4: Goon";
+                summonHorde(10, 15, 3);
+                this.attackCataclysm(); 
+                this.shield += this.maxHp * 0.50;
+                setTimeout(() => {
+                     showBanner('wrath-banner', 3000, "Fart");
+                     this.attackCataclysm(); // Stacked Cataclysm
+                }, 2500);
+                break;
+            case 5: 
+                msg = "STAGE 5: Labo Réfraction"; 
+                this.hp += this.maxHp * 0.80; 
+                this.shield += this.maxHp * 1.00; 
+                summonHorde(15, 20, 5); // Massive Army
+                this.attackCataclysm();
+                setTimeout(() => this.attackCataclysm(), 2000); // Triple Stack
+                setTimeout(() => this.attackCataclysm(), 4000);
+                setTimeout(() => this.attackCataclysm(), 8000);
+                setTimeout(() => this.attackCataclysm(), 12000);
+                break;
+        }
+        showBanner('stage-banner', 4000, msg);
+        document.getElementById('boss-stage').innerText = msg;
+        updateBossUI();
+    }
+    
+// --- UPDATED CATACLYSM: WAVES (Overlapping attacks with 2s intervals) ---
+    attackCataclysm() {
+        showBanner('wrath-banner', 4000, "Exigences de Laboratoire");
+        this.setAnim('spin');
+
+        // WAVE 1: Immediate Chaos (0.0s)
+        // Disorients and sets traps
+        this.triggerLament();
+        this.attackVoidMines();
+
+        // WAVE 2: Zoning (1.5s)
+        // Forces you to move (Wall) while dodging ground hazards (Spikes)
+        setTimeout(() => {
+            if(!this.dead) {
+                this.attackVoidWall();
+                this.attackSpikes();
+            }
+        }, 1500);
+
+        // WAVE 3: Lockdown (3.5s - 2.0s gap)
+        // Pulls you in (Gravity) and snipes you (Lasers/Cannon) while you are stuck
+        setTimeout(() => {
+            if(!this.dead) {
+                this.attackGravityWell();
+                this.attackOrbitalLasers(); 
+                this.fireVoidCannon();
+            }
+        }, 3500);
+
+        // WAVE 4: Aggression (5.5s - 2.0s gap)
+        // Boss and Clones chase you down while beams cut off angles
+        setTimeout(() => {
+            if(!this.dead) {
+                this.attackShadowClones();
+                this.attackMultiBeam();
+                this.attackLeapPunch();
+            }
+        }, 5500);
+
+        // WAVE 5: The Nukes (7.5s - 2.0s gap)
+        // Massive AOE damage
+        setTimeout(() => {
+            if(!this.dead) {
+                this.attackMeteorRain();
+                this.attackVoidBomb();
+            }
+        }, 7500);
+
+        // FINISHER (9.5s - 2.0s gap)
+        setTimeout(() => {
+            if(!this.dead) this.attackGrandSlam();
+        }, 9500);
+    }
+    addArmor() {
+        const plateL = new THREE.Mesh(GEOS.plate, MATS.armorGold); plateL.position.set(-0.8, 2.2, 0); plateL.rotation.z = 0.5; this.mesh.add(plateL);
+        const plateR = new THREE.Mesh(GEOS.plate, MATS.armorGold); plateR.position.set(0.8, 2.2, 0); plateR.rotation.z = -0.5; this.mesh.add(plateR);
+    }
+
+    selectAttack() {
+        const r = Math.random();
+        // Updated rotation with new abilities
+        if(r < 0.10) this.attackShadowClones();
+        else if(r < 0.20) this.attackVoidWall();
+        else if(r < 0.30) this.attackOrbitalLasers();
+        else if(r < 0.40) this.attackVoidMines();
+        else if(r < 0.50) this.attackGravityWell();
+        else if(r < 0.60) this.attackSpikes(); 
+        else if(r < 0.70) this.attackMeteorRain(true); 
+        else if(r < 0.80) this.attackMultiBeam(); 
+        else if(r < 0.90) this.attackLeapPunch(); 
+        else this.fireVoidCannon();
+    }
+    
+    setAnim(state) {
+        this.animState = state;
+        this.animTimer = 0;
+    }
+
+    updateAnim(dt) {
+        this.animTimer += dt;
+        if (this.animState === 'spin') {
+            if(this.limbs.rightArm) this.limbs.rightArm.rotation.x += dt * 10;
+            if(this.limbs.leftArm) this.limbs.leftArm.rotation.x += dt * 10;
+            this.mesh.rotation.y += dt * 10;
+            if (this.animTimer > 1.5) { this.mesh.rotation.y = 0; this.setAnim('idle'); }
+        } else if (this.animState === 'smash') {
+            if(this.limbs.rightArm) this.limbs.rightArm.rotation.x = Math.sin(this.animTimer * 10) * 2;
+             if (this.animTimer > 0.5) { 
+                 if(this.limbs.rightArm) this.limbs.rightArm.rotation.x = 0; 
+                 this.setAnim('idle'); 
+             }
+        }
+    }
+
+    // --- NEW ABILITY 1: VOID WALL ---
+// --- UPDATED ABILITY: VOID WALL (NO KNOCKBACK) ---
+    attackVoidWall() {
+        showBanner('wrath-banner', 2000, "Exam Answer?");
+        this.setAnim('smash');
+        const wallGeo = new THREE.BoxGeometry(60, 15, 2);
+        const wall = new THREE.Mesh(wallGeo, MATS.projVoid);
+        
+        // Spawn behind boss
+        const startPos = this.mesh.position.clone();
+        const dir = reusableVector.subVectors(playerObj.position, startPos).normalize();
+        dir.y = 0;
+        
+        wall.position.copy(startPos).add(dir.multiplyScalar(5));
+        wall.lookAt(playerObj.position.x, 7.5, playerObj.position.z);
+        scene.add(wall);
+        
+        let life = 0;
+        const wallInt = setInterval(() => {
+            life++;
+            wall.translateZ(0.8); // Move forward
+            
+            // Collision Logic
+            const wallBox = new THREE.Box3().setFromObject(wall);
+            if(wallBox.containsPoint(playerObj.position)) {
+                // FIXED: Only deal damage, DO NOT push/launch the player
+                damagePlayer(CONFIG.WALL_DMG);
+            }
+            
+            // VFX: Trail
+             particleSystem.emit({ pos: wall.position, vel: reusableVector.set(0,1,0), count: 5, life: 0.5, size: 2, color: new THREE.Color(0x800080), spread: 10 });
+
+            if(life > 200) { clearInterval(wallInt); scene.remove(wall); }
+        }, 16);
+    }
+    // --- NEW ABILITY 2: GRAVITY WELL ---
+    // Sucks player towards boss
+     attackGravityWell() {
+        showBanner('wrath-banner', 2000, "Math: Erreur de Structure");
+        this.setAnim('channel');
+        
+        const well = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), new THREE.MeshBasicMaterial({color:0x000000, wireframe:true}));
+        well.position.copy(this.mesh.position).add(new THREE.Vector3(0, 5, 0));
+        scene.add(well);
+        
+        let frames = 0;
+        const suckInt = setInterval(() => {
+            frames++;
+            well.scale.setScalar(1 + frames/10);
+            well.rotation.y += 0.2;
+            
+            // FIX: Player immunity while dashing
+            if (!playerStats.leaping) {
+                // FIX: Force Y to 0 so we don't pull player into the ground
+                const pullDir = reusableVector.subVectors(this.mesh.position, playerObj.position);
+                pullDir.y = 0.2; 
+                pullDir.normalize();
+                
+                const dist = this.mesh.position.distanceTo(playerObj.position);
+                if(dist > 5) { 
+                    playerObj.position.add(pullDir.multiplyScalar(0.4)); 
+                } else { 
+                    damagePlayer(2); 
+                }
+            }
+
+            if(frames > 94) { clearInterval(suckInt); scene.remove(well); this.setAnim('idle'); }
+        }, 16);
+    }
+
+    
+    // --- NEW ABILITY 3: ORBITAL LASERS ---
+    // Spawns vertical lasers around the player
+    attackOrbitalLasers() {
+        // No banner, just happens
+        this.setAnim('channel');
+        const spot = playerObj.position.clone();
+        
+        for(let i=0; i<10; i++) {
+            setTimeout(() => {
+                const offsetX = (Math.random() - 0.5) * 25;
+                const offsetZ = (Math.random() - 0.5) * 25;
+                const hitPos = new THREE.Vector3(spot.x + offsetX, 0, spot.z + offsetZ);
+                
+                // Warning
+                const warn = new THREE.Mesh(new THREE.CircleGeometry(2, 16), MATS.beamWarn);
+                warn.rotation.x = -Math.PI/2; warn.position.copy(hitPos); warn.position.y = 0.2;
+                scene.add(warn);
+                
+                setTimeout(() => {
+                    scene.remove(warn);
+                    // Beam
+                    const beam = new THREE.Mesh(GEOS.beam, MATS.railgunBeam);
+                    beam.position.copy(hitPos).add(new THREE.Vector3(0, 50, 0));
+                    beam.scale.set(2, 100, 2);
+                    scene.add(beam);
+                    
+                    triggerScreenShake(0.1, 0.1);
+                    if(playerObj.position.distanceTo(hitPos) < 3) damagePlayer(CONFIG.LASER_DMG);
+                    
+                    setTimeout(() => scene.remove(beam), 300);
+                }, 800);
+            }, i * 200);
+        }
+    }
+
+    // --- NEW ABILITY 4: SHADOW CLONES ---
+    // Dashes at player
+    attackShadowClones() {
+        this.setAnim('spin');
+        for(let i=0; i<3; i++) {
+            setTimeout(() => {
+                const clone = createChimpMesh(false);
+                clone.traverse((c) => { if(c.isMesh) c.material = MATS.voidTwin; });
+                clone.position.copy(this.mesh.position).add(new THREE.Vector3((Math.random()-0.5)*10, 0, (Math.random()-0.5)*10));
+                scene.add(clone);
+                
+                const start = clone.position.clone();
+                const end = playerObj.position.clone();
+                let f = 0;
+                
+                const dashInt = setInterval(() => {
+                    f += 0.05;
+                    clone.position.lerpVectors(start, end, f);
+                    if(f >= 1) {
+                        clearInterval(dashInt);
+                        if(clone.position.distanceTo(playerObj.position) < 4) damagePlayer(CONFIG.CLONE_DMG);
+                         particleSystem.emit({ pos: clone.position, vel: reusableVector.set(0,1,0), count: 20, life: 0.5, size: 1, color: new THREE.Color(0x800080), spread: 5 });
+                        scene.remove(clone);
+                    }
+                }, 16);
+            }, i * 300);
+        }
+    }
+
+    // --- NEW ABILITY 5: VOID MINES ---
+    // Spawns mines that explode after delay
+    attackVoidMines() {
+        showBanner('wrath-banner', 2000, "TMS: RAPPORT DE LABO");
+        this.setAnim('smash');
+        for(let i=0; i<6; i++) {
+            const pos = playerObj.position.clone().add(new THREE.Vector3((Math.random()-0.5)*40, 0, (Math.random()-0.5)*40));
+            const mine = new THREE.Mesh(new THREE.OctahedronGeometry(1), MATS.elite);
+            mine.position.copy(pos); mine.position.y = 1;
+            scene.add(mine);
+            
+            // Pulse effect
+            let ticks = 0;
+            const mineInt = setInterval(() => {
+                ticks++;
+                mine.rotation.x += 0.1; mine.rotation.y += 0.1;
+                mine.scale.setScalar(1 + Math.sin(ticks*0.5)*0.3);
+                
+                if(ticks > 120) { // Explode after 2s
+                    clearInterval(mineInt);
+                    scene.remove(mine);
+                    particleSystem.emit({ pos: pos, vel: reusableVector.set(0,2,0), count: 50, life: 1.0, size: 1.5, color: new THREE.Color(0xff0000), spread: 10 });
+                    if(playerObj.position.distanceTo(pos) < 8) damagePlayer(CONFIG.MINE_DMG);
+                }
+            }, 16);
+        }
+    }
+
+    // --- EXISTING ABILITIES (Kept for Cataclysm) ---
+    triggerLament() {
+        showBanner('lament-banner', 3000, "I Love CCQ");
+        this.setAnim('channel');
+        const wave = new THREE.Mesh(GEOS.torus, MATS.projVoid);
+        wave.rotation.x = Math.PI / 2; wave.position.copy(this.mesh.position); scene.add(wave);
+        let s=1; const int = setInterval(() => { s+=4; wave.scale.set(s,s,1); if(s > 200) { clearInterval(int); scene.remove(wave); this.setAnim('idle');} }, 16);
+        entities.forEach(e => { if(e.faction === 'ally') e.takeDamage(600); });
+        damagePlayer(40);
+    }
+
+    attackVoidBomb() {
+        // showBanner('wrath-banner', 3000, "Gas bomb"); // Removed banner to reduce clutter during cataclysm
+        this.setAnim('smash');
+        const bomb = new THREE.Mesh(new THREE.SphereGeometry(6, 32, 32), MATS.projVoid);
+        bomb.position.set(0, 50, 0); scene.add(bomb);
+        const bInt = setInterval(() => {
+            bomb.position.y -= 2;
+            if(bomb.position.y <= 0) {
+                clearInterval(bInt); scene.remove(bomb);
+                triggerScreenShake(0.8, 1);
+                particleSystem.emit({ pos: reusableVector.set(0,1,0), vel: reusableVector.set(0,2,0), count: 300, life: 3, size: 2, color: new THREE.Color(0x800080), spread: 35 });
+                entities.forEach(e => { if(e.faction === 'ally') e.takeDamage(99999); });
+                damagePlayer(70);
+            }
+        }, 16);
+    }
+
+    attackLeapPunch() {
+        const start = this.mesh.position.clone();
+        const end = playerObj.position.clone();
+        let f = 0;
+        this.setAnim('smash');
+        const leap = setInterval(() => {
+            f += 0.05;
+            this.mesh.position.lerpVectors(start, end, f);
+            this.mesh.position.y = Math.sin(f * Math.PI) * 25;
+            if(f >= 1) {
+                clearInterval(leap); this.mesh.position.y = 0;
+                triggerScreenShake(0.6, 0.6);
+                particleSystem.emit({ pos: this.mesh.position, vel: reusableVector.set(0,1,0), count: 150, life: 1.5, size: 1, color: new THREE.Color(0xffffff), spread: 20 });
+                if(this.mesh.position.distanceTo(playerObj.position) < 8) damagePlayer(60);
+                this.setAnim('idle');
+            }
+        }, 16);
+    }
+
+    attackGrandSlam() {
+        showBanner('wrath-banner', 2000, "RÉACTION RU");
+        let frames = 0;
+        this.setAnim('channel');
+        const upInt = setInterval(() => {
+            frames++;
+            this.mesh.position.y = THREE.MathUtils.lerp(this.mesh.position.y, 40, 0.1);
+            if(frames > 60) {
+                clearInterval(upInt);
+                setTimeout(() => {
+                    this.mesh.position.y = 0;
+                    this.setAnim('smash');
+                    triggerScreenShake(1.2, 1.2);
+                    const wave = new THREE.Mesh(GEOS.torus, MATS.projVoid);
+                    wave.rotation.x = Math.PI/2; wave.position.copy(this.mesh.position); scene.add(wave);
+                    let s=1; const wInt = setInterval(()=>{ s+=5; wave.scale.set(s,s,1); if(s>120){clearInterval(wInt); scene.remove(wave);} }, 16);
+                    if(this.mesh.position.distanceTo(playerObj.position) < 100) damagePlayer(95);
+                    entities.forEach(e => { if(e.faction === 'ally' && e.mesh.position.distanceTo(this.mesh.position) < 100) e.takeDamage(3000); });
+                }, 400);
+            }
+        }, 16);
+    }
+
+    attackMeteorRain(buffed = false) {
+        if(buffed) showBanner('wrath-banner', 2000, "Récit Collectif");
+        this.setAnim('channel');
+        for(let i=0; i<8; i++) { 
+            setTimeout(() => {
+                const allies = entities.filter(e => e.faction === 'ally');
+                let targetPos = playerObj.position.clone();
+                if(allies.length > 0 && Math.random() < 0.5) targetPos.copy(allies[Math.floor(Math.random()*allies.length)].mesh.position);
+                targetPos.add(reusableVector.set((Math.random()-0.5)*30, 0, (Math.random()-0.5)*30));
+                
+                const warning = new THREE.Mesh(new THREE.CircleGeometry(4, 16), MATS.beamWarn);
+                warning.rotation.x = -Math.PI/2; warning.position.copy(targetPos); warning.position.y = 0.1;
+                scene.add(warning);
+                const orb = getProjectile();
+                orb.mesh.position.copy(targetPos).add(reusableVector.set(0, 50, 0)); 
+                orb.velocity.set(0, -18, 0); orb.life = 5.0; orb.active = true; 
+                orb.type = buffed ? 'meteor_buffed' : 'meteor_normal'; orb.faction = 'enemy'; 
+                orb.mesh.material = buffed ? MATS.projMeteor : MATS.projVoid; 
+                orb.mesh.scale.set(buffed ? 5 : 2, buffed ? 5 : 2, buffed ? 5 : 2);
+                orb.mesh.visible = true; orb.warningMesh = warning;
+            }, i * 400);
+        }
+    }
+    
+    attackSpikes() {
+        let targetPos = playerObj.position.clone();
+        this.setAnim('smash');
+        const warn = new THREE.Mesh(new THREE.CircleGeometry(3, 16), MATS.beamWarn);
+        warn.rotation.x = -Math.PI/2; warn.position.copy(targetPos); warn.position.y = 0.1;
+        scene.add(warn);
+        setTimeout(() => {
+            scene.remove(warn);
+            const spike = new THREE.Mesh(GEOS.cyl, MATS.spike);
+            spike.scale.set(3, 10, 3); spike.position.copy(targetPos); spike.position.y = -4; scene.add(spike);
+            let f = 0;
+            const anim = setInterval(() => {
+                f++; spike.position.y += 1.5;
+                if(f===6) {
+                    triggerScreenShake(0.3, 0.3);
+                    if(playerObj.position.distanceTo(spike.position) < 4) damagePlayer(50);
+                    entities.forEach(e => { if(e.faction === 'ally' && e.mesh.position.distanceTo(spike.position) < 4) e.takeDamage(600); });
+                }
+                if(f>12) { clearInterval(anim); scene.remove(spike); }
+            }, 16);
+        }, 800);
+    }
+
+    attackMultiBeam() {
+        const dirs = [0, -0.4, 0.4, -0.8, 0.8];
+        this.setAnim('channel');
+        const targetPos = playerObj.position.clone();
+        dirs.forEach(offset => {
+            const beam = new THREE.Mesh(GEOS.beam, MATS.projEnemy);
+            const start = this.mesh.position.clone().add(reusableVector.set(0,3,0));
+            const vec = reusableVector.subVectors(targetPos, start).applyAxisAngle(reusableVector.set(0,1,0), offset);
+            const end = reusableVector.copy(start).add(vec);
+            beam.position.copy(start).lerp(end, 0.5); beam.scale.set(1.5, 120, 1.5); beam.lookAt(end); beam.rotateX(Math.PI/2);
+            scene.add(beam); setTimeout(() => scene.remove(beam), 250);
+            const ray = new THREE.Ray(start, vec.normalize());
+            if(ray.distanceToPoint(playerObj.position.clone().add(reusableVector.set(0,1,0))) < 2.5) damagePlayer(35);
+            entities.forEach(e => { if(e.faction === 'ally' && ray.distanceToPoint(e.mesh.position.clone().add(reusableVector.set(0,1,0))) < 3) e.takeDamage(250); });
+        });
+    }
+
+    fireVoidCannon() {
+        this.setAnim('smash');
+        const orb = getProjectile();
+        orb.mesh.geometry = GEOS.sphere; orb.mesh.material = MATS.projVoid; orb.mesh.scale.set(2.5,2.5,2.5);
+        orb.mesh.position.copy(this.mesh.position).add(reusableVector.set(0,4,0)); orb.mesh.visible = true;
+        const targetPos = playerObj.position.clone();
+        const dir = reusableVector.subVectors(targetPos, orb.mesh.position).normalize();
+        orb.velocity.copy(dir.multiplyScalar(35));
+        orb.life = 5.0; orb.type = 'void_cannon'; orb.faction = 'enemy'; orb.active = true;
+        orb.light = getProjectileLight(); orb.light.color.set(0x800080); orb.light.intensity = 5;
+    }
+}
+
+function getProjectileLight() {
+    const light = projectileLightPool[projectileLightIndex];
+    projectileLightIndex = (projectileLightIndex + 1) % PROJECTILE_LIGHT_POOL_SIZE;
+    return light;
+}
+
+function getProjectile() {
+    let p = projectilePool.find(x => !x.active);
+    if(!p) { 
+        const m = new THREE.Mesh(GEOS.sphere, MATS.projPlayer);
+        scene.add(m);
+        p = { mesh: m, light: null, active: false, velocity: new THREE.Vector3(), life: 0, warningMesh: null };
+        projectilePool.push(p);
+    }
+    if (p.light) {
+        p.light.intensity = 0;
+        p.light.position.set(0,-9999,0);
+    }
+    p.light = null;
+    return p;
+}
+
+function startGame() {
+    gameActive = true; cinematicMode = false;
+    document.getElementById('cinematic-bars').style.display = 'none';
+    entities.forEach(e => scene.remove(e.mesh)); entities = [];
+    projectilePool.forEach(p => { p.active = false; p.mesh.visible = false; if(p.warningMesh) { scene.remove(p.warningMesh); p.warningMesh = null; } });
+    
+    camera.position.set(0,0,0); camera.rotation.set(0,0,0); playerObj.add(camera);
+    playerObj.position.set(0, 1.7, 50); playerMesh.visible = false;
+    if(weaponModels.rifle) weaponModels.rifle.visible = false;
+    if(weaponModels.railgun) weaponModels.railgun.visible = false;
+
+    boss = new BossEntity(new THREE.Vector3(0,0,-80)); entities.push(boss);
+
+    playerStats = { ...playerStats, hp: CONFIG.PLAYER_MAX_HP, shield: 0, rifleActive: false, rifleAmmo: 0, mechActive: false, mechTimer: 0, ascended: false, invincible: false, lamentShieldTimer: 0, leaping: false };
+    for(let k in playerStats.cooldowns) { playerStats.cooldowns[k] = 0; document.getElementById('cd-'+k).style.height = '0%'; document.getElementById('ab-'+k).classList.add('ready'); }
+
+    document.getElementById('overlay').style.display = 'none'; document.getElementById('ab-4').style.display = 'none';
+    lastTime = performance.now();
+    updatePlayerUI(); updateBossUI();
+}
+
+function triggerVictoryCinematic() {
+    gameActive = false; cinematicMode = 'victory'; cinematicTimer = 0;
+    document.exitPointerLock();
+    document.getElementById('cinematic-bars').style.display = 'flex';
+    document.getElementById('ui-layer').style.display = 'none';
+    boss.mesh.rotation.x = -Math.PI/2; boss.mesh.position.y = 1;
+    playerObj.remove(camera); scene.add(camera);
+    
+    camera.position.copy(boss.mesh.position.clone().add(reusableVector.set(10, 20, 10)));
+    camera.lookAt(boss.mesh.position);
+    
+    for(let i=0; i<10; i++) {
+        setTimeout(() => {
+             particleSystem.emit({ pos: boss.mesh.position.clone().add(reusableVector.set((Math.random()-0.5)*20, 10, (Math.random()-0.5)*20)), vel: reusableVector.set(0,10,0), count: 200, life: 2.0, size: 2.0, color: new THREE.Color(0xffff00), spread: 20 });
+        }, i * 500);
+    }
+}
+
+function runVictoryCinematic(dt) {
+    cinematicTimer += dt;
+    camera.position.x = boss.mesh.position.x + Math.sin(cinematicTimer * 0.5) * 30;
+    camera.position.z = boss.mesh.position.z + Math.cos(cinematicTimer * 0.5) * 30;
+    camera.lookAt(boss.mesh.position);
+
+    if(cinematicTimer > 3 && boss.mesh.scale.x > 0) {
+        boss.mesh.scale.subScalar(dt * 0.3);
+    }
+
+    if(cinematicTimer > 8) {
+        document.getElementById('overlay').style.display = 'flex'; 
+        document.querySelector('h1').innerText = "VICTORY";
+        document.querySelector('p').innerText = "General Average has been purged. The Void collapses.";
+        document.getElementById('ui-layer').style.display = 'flex';
+        cinematicMode = false;
+    }
+}
+
+function triggerDefeatCinematic() {
+    gameActive = false; cinematicMode = 'defeat'; cinematicTimer = 0;
+    document.exitPointerLock();
+    document.getElementById('cinematic-bars').style.display = 'flex';
+    document.getElementById('ui-layer').style.display = 'none';
+    playerObj.remove(camera); scene.add(camera);
+    
+    camera.position.copy(playerObj.position.clone().add(reusableVector.set(5, 15, 5)));
+    camera.lookAt(playerObj.position);
+    playerMesh.visible = true;
+    playerMesh.rotation.x = -Math.PI/2; 
+}
+
+function runDefeatCinematic(dt) {
+    cinematicTimer += dt;
+    if(cinematicTimer < 4) {
+        camera.position.y += dt * 2;
+        if(boss && boss.mesh) {
+            boss.mesh.lookAt(playerObj.position);
+            boss.mesh.position.lerp(playerObj.position, dt * 0.5);
+        }
+    } else {
+         document.getElementById('overlay').style.display = 'flex'; 
+         document.querySelector('h1').innerText = "DEFEAT";
+         document.querySelector('p').innerText = "Sultan claims another soul. Refresh to restart.";
+         document.getElementById('ui-layer').style.display = 'flex';
+         cinematicMode = false;
+    }
+}
+
+function handleAbilityInput(k) {
+    if(!gameActive || ascensionCinematic > 0 || interventionCinematic > 0) return;
+    
+    if(k === '1' && playerStats.cooldowns['1'] <= 0) {
+        playerStats.shield += 2200; playerStats.health += 70;
+        spawnEntity('guardian', playerObj.position);
+        const shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(2, 16, 16), new THREE.MeshBasicMaterial({color: 0x00ffff, transparent:true, opacity: 0.3}));
+        shieldMesh.position.copy(playerObj.position); scene.add(shieldMesh);
+        setTimeout(()=>scene.remove(shieldMesh), 500);
+        playerStats.cooldowns['1'] = CD_MAX['1']; triggerCooldownUI('1');
+    }
+    else if (k === '2') {
+        if(playerStats.ascended) { if(playerStats.directHitTimer <= 0) { holyDirectHit(); playerStats.directHitTimer = CONFIG.DIRECT_HIT_CD; } } 
+        else if (playerStats.cooldowns['2'] <= 0) { 
+            playerStats.rifleActive = true; playerStats.rifleAmmo = 250; 
+            document.getElementById('ammo-counter').style.display = 'block'; 
+            weaponModels.rifle.visible = true;
+            updatePlayerUI(); 
+        }
+    }
+    else if (k === '3' && playerStats.cooldowns['3'] <= 0) { performIntervention(); playerStats.cooldowns['3'] = CD_MAX['3']; triggerCooldownUI('3'); }
+    else if (k === 'e' && playerStats.cooldowns['e'] <= 0) {
+        playerStats.mechActive = true; playerStats.mechTimer = CONFIG.MECH_DURATION; playerStats.shield += CONFIG.MECH_SHIELD;
+        playerStats.cooldowns['e'] = CD_MAX['e']; triggerCooldownUI('e');
+        document.getElementById('mech-indicator').style.display = 'block'; document.getElementById('mech-overlay').style.display = 'block';
+        weaponModels.railgun.visible = true;
+        particleSystem.emit({ pos: playerObj.position, vel: reusableVector.set(0,0,0), count: 100, life: 1.0, size: 1.0, color: new THREE.Color(0x00ffff), spread: 15 });
+    }
+    else if (k === 'shift' && playerStats.cooldowns['shift'] <= 0 && !playerStats.leaping) { performPlayerLeap(); playerStats.cooldowns['shift'] = CD_MAX['shift']; triggerCooldownUI('shift');    playerStats.shield += 100; playerStats.health += 70;
+ }
+    else if (k === 'f' && playerStats.cooldowns['f'] <= 0) { performLamentForTheLiving(); playerStats.cooldowns['f'] = CD_MAX['f']; triggerCooldownUI('f'); }
+    else if (k === '4' && boss.stage >= 3 && !playerStats.ascended) { performAscension(); }
+}
+
+function performPlayerLeap() {
+    playerStats.leaping = true;
+    camera.getWorldDirection(moveDir); moveDir.y = 0; moveDir.normalize();
+    let frames = 0;
+    
+    particleSystem.emit({ pos: playerObj.position, vel: reusableVector.set(0,2,0), count: 50, life: 0.5, size: 1, color: new THREE.Color(0x00ffff), spread: 5 });
+    
+    const leapInt = setInterval(() => {
+        frames++;
+        // Shortened leap (~20 units total)
+        playerObj.position.add(moveDir.multiplyScalar(1.0)); 
+        playerObj.position.y = Math.sin((frames/20) * Math.PI) * 6 + 1.7;
+        
+        if(frames % 2 === 0) {
+             particleSystem.emit({ pos: playerObj.position, vel: reusableVector.set(0,0,0), count: 5, life: 0.2, size: 0.5, color: new THREE.Color(0x00ffff), spread: 1 });
+        }
+
+        if(frames >= 20) {
+            clearInterval(leapInt); playerStats.leaping = false; playerObj.position.y = 1.7;
+            triggerScreenShake(0.6, 0.4);
+            particleSystem.emit({ pos: playerObj.position, vel: reusableVector.set(0,3,0), count: 150, life: 1, size: 1.5, color: new THREE.Color(0x00ffff), spread: 15 });
+            entities.forEach(e => { if(e.faction === 'enemy' && !e.dead && e.mesh.position.distanceTo(playerObj.position) < 15) { e.takeDamage(200, true); e.stunTimer = 3000; } });
+        }
+    }, 16);
+}
+
+function performIntervention() {
+    interventionCinematic = 1; 
+    setTimeout(() => {
+        interventionCinematic = 2; 
+        setTimeout(() => {
+            interventionCinematic = 0;
+            for(let i=0; i<4; i++) spawnEntity('soldier', playerObj.position);
+            for(let i=0; i<2; i++) spawnEntity('guardian', playerObj.position);
+            const strike = new THREE.Mesh(GEOS.beam, MATS.summonBeam);
+            strike.position.copy(playerObj.position).add(reusableVector.set(0,50,0)); strike.scale.set(5, 100, 5);
+            scene.add(strike); setTimeout(()=>scene.remove(strike), 500);
+            fireHolyBeams();
+        }, 300);
+    }, 300);
+}
+
+function performLamentForTheLiving() {
+    showBanner('lament-banner', 3000, "Sultan sacrifice");
+    let absorbed = 0;
+    entities.forEach(e => {
+        if(e.faction === 'ally') {
+            e.kneel(); absorbed += e.hp;
+            particleSystem.emit({ pos: e.mesh.position, vel: reusableVector.subVectors(playerObj.position, e.mesh.position).normalize().multiplyScalar(20), count: 20, life: 1, size: 0.5, color: new THREE.Color(0xffff00), spread: 2 });
+            setTimeout(() => e.takeDamage(99999), 1000);
+        }
+    });
+    if(absorbed > 0) {
+        playerStats.shield += absorbed; playerStats.lamentShieldTimer = 8000;
+        playerStats.damageBuff = 2.5; playerStats.buffTimer = 10000;
+        document.getElementById('buff-text').style.display = 'block';
+    }
+}
+
+function performAscension() {
+    ascensionCinematic = 1; playerStats.invincible = true;
+    setTimeout(() => {
+        document.getElementById('white-screen').style.opacity = 1; ascensionCinematic = 2;
+        setTimeout(() => {
+            for(let i=entities.length-1; i>=0; i--) {
+                const e = entities[i];
+                if(e !== boss) { e.dead = true; scene.remove(e.mesh); entities.splice(i, 1); } 
+                else { boss.stunTimer = 5000; }
+            }
+            playerStats.ascended = true; document.getElementById('icon-2').innerText = '⚡'; 
+            document.getElementById('white-screen').style.opacity = 0;
+            ascensionCinematic = 0; playerObj.position.y = 1.7; camera.rotation.set(0,0,0); playerStats.invincible = false;
+            showBanner('stage-banner', 5000, "Diddy blud activated👅");
+        }, 1500);
+    }, 1000);
+}
+
+function holyDirectHit() {
+    raycaster.setFromCamera({x:0, y:0}, camera);
+    const intersects = raycaster.intersectObjects(entities.map(e=>e.mesh), true);
+    const beam = new THREE.Mesh(GEOS.beam, MATS.projPlayer);
+    camera.getWorldPosition(cameraWorldPos);
+    camera.getWorldDirection(cameraWorldDir);
+    beam.position.copy(cameraWorldPos).add(cameraWorldDir.multiplyScalar(50)); 
+    beam.scale.set(0.5, 100, 0.5); beam.lookAt(playerObj.position); beam.rotateX(Math.PI/2);
+    scene.add(beam); setTimeout(()=>scene.remove(beam), 100);
+    if(intersects.length > 0) {
+        const hit = entities.find(e => e.mesh === intersects[0].object.parent);
+        if(hit) {
+            hit.takeDamage(CONFIG.DIRECT_HIT_DMG * playerStats.damageBuff, true);
+            particleSystem.emit({ pos: intersects[0].point, vel: reusableVector.set(0,0,0), count: 50, life: 1, size: 1, color: new THREE.Color(0x00ffff), spread: 10 });
+        }
+    }
+}
+
+function fireHolyBeams() { entities.forEach(e => { if(e.faction === 'enemy') { e.takeDamage(100 * playerStats.damageBuff, false); e.stunTimer = 4000; } }); }
+
+function handleContinuousFire(dt) {
+    if(!gameActive) return;
+    if(isMouseDown && playerStats.ascended) { if(playerStats.directHitTimer <= 0) { holyDirectHit(); playerStats.directHitTimer = 1000; } }
+    if(isMouseDown && playerStats.mechActive) { if(playerStats.attackTimer <= 0) { playerStats.attackTimer = CONFIG.RAILGUN_CD; fireRailgun(); } } 
+    else if(isMouseDown && playerStats.rifleActive && !playerStats.ascended) {
+        if(playerStats.rifleAmmo > 0 && playerStats.attackTimer <= 0) {
+            playerStats.rifleAmmo--;
+            shootProjectile(true); 
+            playerStats.attackTimer = CONFIG.RIFLE_RATE;
+            updatePlayerUI();
+            if(playerStats.rifleAmmo <= 0) { 
+                playerStats.rifleActive = false; 
+                playerStats.cooldowns['2'] = CD_MAX['2']; 
+                triggerCooldownUI('2'); 
+                document.getElementById('ammo-counter').style.display = 'none'; 
+                weaponModels.rifle.visible = false;
+            }
+        }
+    }
+}
+
+document.addEventListener('mousedown', (e) => {
+    if(document.pointerLockElement === document.body && e.button === 0 && !playerStats.rifleActive && !playerStats.mechActive && !playerStats.ascended && ascensionCinematic === 0) {
+        if(playerStats.throwTimer <= 0) { playerStats.throwTimer = CONFIG.THROW_CD; shootProjectile(false); }
+    }
+});
+
+
+
+
+// Helper to get the exact tip of the gun
+function getMuzzlePosition(weaponGroup, zOffset) {
+    // Clone position so we don't mess up the actual object
+    const v = new THREE.Vector3(0, 0.05, zOffset); 
+    v.applyMatrix4(weaponGroup.matrixWorld);
+    return v;
+}
+
+// Helper for expanding energy rings (Aura)
+function spawnEnergyRing(pos, color, scaleSpeed) {
+    const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.5, 0.05, 8, 16), 
+        new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 1.0 })
+    );
+    ring.position.copy(pos);
+    ring.lookAt(cameraWorldPos.clone().add(cameraWorldDir)); // Face shot direction
+    scene.add(ring);
+    
+    let s = 1;
+    const int = setInterval(() => {
+        s += scaleSpeed;
+        ring.scale.set(s, s, 1);
+        ring.material.opacity -= 0.1;
+        if(ring.material.opacity <= 0) {
+            clearInterval(int);
+            scene.remove(ring);
+        }
+    }, 16);
+}
+
+
+
+
+    
+function fireRailgun() {
+    raycaster.setFromCamera({x: 0, y: 0}, camera);
+    const intersects = raycaster.intersectObjects(entities.map(e => e.mesh), true);
+    
+    // 1. Get Origin from WEAPON MUZZLE, not camera center
+    const muzzlePos = getMuzzlePosition(weaponModels.railgun, -1.2); // -1.2 is tip of barrel
+    
+    camera.getWorldPosition(cameraWorldPos);
+    camera.getWorldDirection(cameraWorldDir);
+    
+    // Calculate End Point
+    const endPoint = reusableVector.copy(cameraWorldPos).add(cameraWorldDir.multiplyScalar(300));
+    let hitPoint = endPoint.clone();
+    if(intersects.length > 0) hitPoint = intersects[0].point;
+
+    // 2. VFX: Neon Blue Beam (Core)
+    const beam = new THREE.Mesh(GEOS.beam, MATS.railgunBeam);
+    const distance = muzzlePos.distanceTo(hitPoint);
+    beam.position.copy(muzzlePos).lerp(hitPoint, 0.5);
+    beam.scale.set(0.6, distance, 0.6);
+    beam.lookAt(hitPoint);
+    beam.rotateX(Math.PI / 2);
+    scene.add(beam);
+    
+    // 3. VFX: Outer Glow Beam (Aura)
+    const outerBeam = new THREE.Mesh(GEOS.beam, new THREE.MeshBasicMaterial({
+        color: 0x00ffff, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending
+    }));
+    outerBeam.position.copy(beam.position);
+    outerBeam.rotation.copy(beam.rotation);
+    outerBeam.scale.set(1.5, distance, 1.5);
+    scene.add(outerBeam);
+
+    setTimeout(() => { scene.remove(beam); scene.remove(outerBeam); }, 100);
+
+    // 4. VFX: Muzzle Flash & Rings
+    spawnEnergyRing(muzzlePos, 0x00ffff, 1.5);
+    particleSystem.emit({ pos: muzzlePos, vel: cameraWorldDir.clone().multiplyScalar(5), count: 20, life: 0.3, size: 0.5, color: new THREE.Color(0x00ffff), spread: 2 });
+
+    // 5. VFX: Impact
+    particleSystem.emit({ pos: hitPoint, vel: reusableVector.set(0,0,0), count: 60, life: 1.2, size: 2.0, color: new THREE.Color(0x00ffff), spread: 15 });
+    triggerScreenShake(0.3, 0.3);
+
+    // Damage Logic
+    entities.forEach(e => {
+        if(!e.dead && e.faction === 'enemy') {
+            const dist = e.mesh.position.distanceTo(hitPoint);
+            if (dist < 10) {
+                e.takeDamage(CONFIG.RAILGUN_DMG * playerStats.damageBuff * (dist < 3 ? 1.0 : 0.5), true);
+                e.mesh.position.y += 0.0; 
+            }
+        }
+    });
+}
+
+function shootProjectile(isRifle) {
+    const p = getProjectile();
+    p.mesh.visible = true; p.type = isRifle ? 'rifle' : 'date'; p.isPlayer = true; p.life = 2.0; p.faction = 'player';
+    p.mesh.material = isRifle ? MATS.projPlayer : MATS.projDate;
+    p.mesh.scale.set(0.15,0.15,0.15);
+    p.light = getProjectileLight();
+    p.light.color.set(isRifle ? 0x00ffff : 0xffd700); p.light.intensity = 5.0;
+    
+    camera.getWorldPosition(cameraWorldPos).add(camera.getWorldDirection(cameraWorldDir));
+    p.mesh.position.copy(cameraWorldPos);
+    
+    raycaster.setFromCamera({x:0, y:0}, camera); 
+    const targetPoint = reusableVector;
+    raycaster.ray.at(100, targetPoint); 
+    const intersects = raycaster.intersectObjects(entities.map(e=>e.mesh), true);
+    if(intersects.length > 0) targetPoint.copy(intersects[0].point);
+
+    const dir = targetPoint.sub(cameraWorldPos).normalize();
+    p.velocity.copy(dir.multiplyScalar(isRifle ? 150 : 50));
+    p.active = true;
+}
+
+function npcShoot(sourceEnt, targetPos) {
+    sourceEnt.swingArm();
+    const p = getProjectile();
+    p.mesh.visible = true; p.type = 'npc'; p.isPlayer = false; p.life = 2.0; p.faction = sourceEnt.faction;
+    p.mesh.material = sourceEnt.faction === 'enemy' ? MATS.projEnemy : MATS.projPlayer;
+    p.mesh.scale.set(0.25,0.25,0.25);
+    p.mesh.position.copy(sourceEnt.mesh.position).add(reusableVector.set(0,1.5,0));
+    
+    const dir = reusableVector.subVectors(targetPos, sourceEnt.mesh.position).normalize();
+    p.velocity.copy(dir.multiplyScalar(100)); 
+    p.active = true;
+    p.light = getProjectileLight();
+    p.light.color.set(sourceEnt.faction === 'enemy' ? 0xff0000 : 0x00ff00);
+    p.light.intensity = 3;
+}
+
+function spawnEntity(type, origin) {
+    const pos = origin.clone().add(reusableVector.set((Math.random()-0.5)*15, 0, (Math.random()-0.5)*15));
+    pos.y = 0;
+    let mesh, hp, maxHp, faction, name;
+
+    if(type === 'twin') { mesh = createChimpMesh(false); hp = maxHp = CONFIG.TWIN_HP; faction = 'enemy'; name = 'Twin'; }
+    else if (type === 'void_twin') { mesh = createChimpMesh(false); mesh.children[0].material = MATS.voidTwin; hp = CONFIG.VOID_TWIN_HP; maxHp = CONFIG.VOID_TWIN_HP; faction = 'enemy'; name = 'Void Twin'; }
+    else if (type === 'elite') { mesh = createHumanoidMesh(MATS.elite, false); hp = CONFIG.ELITE_HP; maxHp = CONFIG.ELITE_HP; faction = 'enemy'; name = 'Elite'; }
+    else if (type === 'titan') { mesh = createHumanoidMesh(MATS.titan, true); mesh.scale.set(2,2,2); hp = CONFIG.TITAN_HP; maxHp = CONFIG.TITAN_HP; faction = 'enemy'; name = 'Void Titan'; }
+    else if (type === 'footman') { mesh = createHumanoidMesh(MATS.footman, false); hp = maxHp = CONFIG.FOOTMAN_HP; faction = 'enemy'; name = 'Footman'; }
+    else if (type === 'guardian') { mesh = createHumanoidMesh(MATS.guardian, true); mesh.scale.set(1.5, 1.5, 1.5); hp = maxHp = CONFIG.GUARDIAN_HP; faction = 'ally'; name = 'Guardian'; }
+    else if (type === 'soldier') { mesh = createHumanoidMesh(MATS.soldier, false); hp = maxHp = CONFIG.ALLY_HP; faction = 'ally'; name = 'Soldier'; }
+
+    mesh.position.copy(pos);
+    const ent = new Entity(mesh, hp, maxHp, faction, name);
+    if(type === 'elite') ent.shield = 50;
+    entities.push(ent);
+}
+
+function damagePlayer(amt) {
+    if(playerStats.invincible || cinematicMode) return;
+    if(playerStats.mechActive) amt *= 0.5;
+    if(playerStats.shield > 0) { if(playerStats.shield >= amt) { playerStats.shield -= amt; amt = 0; } else { amt -= playerStats.shield; playerStats.shield = 0; } }
+    playerStats.hp -= amt; updatePlayerUI();
+    document.getElementById('ui-layer').style.boxShadow = "inset 0 0 50px red";
+    setTimeout(() => document.getElementById('ui-layer').style.boxShadow = "none", 100);
+    if(playerStats.hp <= 0) { triggerDefeatCinematic(); }
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    const now = performance.now();
+    const dt = Math.min((now - lastTime) / 1000, 0.1);
+    lastTime = now;
+
+    if(cinematicMode) { composer.render(dt); if(cinematicMode === 'victory') runVictoryCinematic(dt); else if(cinematicMode === 'defeat') runDefeatCinematic(dt); return; }
+    if(!gameActive) { composer.render(dt); return; }
+
+    particleSystem.update(dt);
+    
+    // Camera Shake
+    const originalCameraX = camera.position.x;
+    const originalCameraY = camera.position.y;
+    if(cameraShake.time > 0) {
+        cameraShake.time -= dt;
+        camera.position.x += (Math.random() - 0.5) * cameraShake.intensity;
+        camera.position.y += (Math.random() - 0.5) * cameraShake.intensity;
+    }
+
+    // MOVEMENT RESET to Standard WASD
+    if(playerStats.leaping === false && ascensionCinematic === 0 && interventionCinematic === 0) {
+        playerObj.getWorldDirection(playerFwd); 
+        playerFwd.y=0; 
+        playerFwd.normalize();
+        
+        // Compute Right vector: Cross(Up, Forward) -> If Fwd is -Z, Up is +Y, Right is -X (Left)?
+        // Let's rely on Cross(playerFwd, playerObj.up)
+        // Fwd(0,0,-1) x Up(0,1,0) = (1,0,0) -> +X is Right
+        playerRgt.crossVectors(playerFwd, playerObj.up).normalize();
+        
+        moveDir.set(0,0,0);
+        // Standard WASD
+        if(keys.w) moveDir.sub(playerFwd); // W moves Forward
+        if(keys.s) moveDir.add(playerFwd); // S moves Backward
+        if(keys.a) moveDir.add(playerRgt); // A moves Left
+        if(keys.d) moveDir.sub(playerRgt); // D moves Right
+
+        if(moveDir.lengthSq()>0) playerObj.position.add(moveDir.normalize().multiplyScalar(CONFIG.PLAYER_SPEED * dt));
+        playerObj.position.x = Math.max(-390, Math.min(390, playerObj.position.x)); playerObj.position.z = Math.max(-390, Math.min(390, playerObj.position.z));
+    }
+
+    if(boss && !boss.dead) {
+        boss.updateAnim(dt);
+        if((now - boss.lastAttackTime) > 1500) { boss.actionTimer = 100; }
+    }
+
+    for(let k in playerStats.cooldowns) if(playerStats.cooldowns[k] > 0) { playerStats.cooldowns[k] -= dt * 1000; updateCooldownUI(k, playerStats.cooldowns[k], CD_MAX[k]); }
+    if(playerStats.throwTimer > 0) playerStats.throwTimer -= dt * 1000;
+    if(playerStats.attackTimer > 0) playerStats.attackTimer -= dt * 1000;
+    if(playerStats.directHitTimer > 0) playerStats.directHitTimer -= dt * 1000;
+    if(playerStats.mechActive) { 
+        playerStats.mechTimer -= dt * 1000; 
+        if(playerStats.mechTimer <= 0) { 
+            playerStats.mechActive = false; 
+            document.getElementById('mech-indicator').style.display = 'none'; 
+            document.getElementById('mech-overlay').style.display = 'none'; 
+            weaponModels.railgun.visible = false;
+        } 
+    }
+    if(playerStats.buffTimer > 0) { playerStats.buffTimer -= dt * 1000; if(playerStats.buffTimer <= 0) { playerStats.damageBuff = 1.0; document.getElementById('buff-text').style.display = 'none'; } }
+
+    if(boss && !boss.dead && !boss.stunTimer) { 
+        if(boss.retreatMode) { if((boss.retreatTimer -= dt * 1000) <= 0) { boss.retreatMode = false; boss.shield = 0; } } 
+        else {
+            if(boss.gloryMode) { if((boss.gloryTimer -= dt * 1000) <= 0) boss.gloryMode = false; }
+            if((boss.actionTimer -= dt * 1000) <= 0) { boss.selectAttack(); let baseRate = 1300; if(boss.wrath > 70) baseRate = 950; boss.actionTimer = baseRate - (boss.stage * 120); }
+        }
+    }
+
+    handleContinuousFire(dt);
+
+    projectilePool.forEach(p => {
+        if(p.active) {
+            p.life -= dt; p.mesh.position.add(p.velocity.clone().multiplyScalar(dt));
+            if(p.light) p.light.position.copy(p.mesh.position);
+            
+            if(p.type.includes('meteor') && Math.random() < 0.2) { 
+                 particleSystem.emit({ pos: p.mesh.position, vel: reusableVector.set(0,0,0), count: 1, life: 0.5, size: 2, color: new THREE.Color(0xff4400), spread: 0.2 });
+            }
+
+            if(p.life <= 0) { p.active = false; p.mesh.visible = false; if(p.warningMesh){scene.remove(p.warningMesh); p.warningMesh=null;} return; }
+            if((p.type === 'meteor_buffed' || p.type === 'meteor_normal') && p.mesh.position.y <= 0) {
+                p.active = false; p.mesh.visible = false; if(p.warningMesh) { scene.remove(p.warningMesh); p.warningMesh = null; }
+                triggerScreenShake(0.4, 0.4);
+                particleSystem.emit({ pos: p.mesh.position, vel: reusableVector.set(0,1,0), count: 50, life: 2, size: 1.5, color: new THREE.Color(p.type === 'meteor_buffed' ? 0xff4400 : 0x800080), spread: 15 });
+                return;
+            }
+
+            let hit = false;
+            if(p.isPlayer) {
+                for(const e of entities) {
+                    if(e.faction === 'enemy' && !e.dead && p.mesh.position.distanceTo(e.mesh.position.clone().add(reusableVector.set(0,2,0))) < 3.0) {
+                        hit = true;
+                        if(p.type === 'rifle') e.takeDamage(CONFIG.RIFLE_DMG * playerStats.damageBuff, true); 
+                        else e.takeDamage(50 * playerStats.damageBuff, true);
+                        break;
+                    }
+                }
+            } else {
+                if(p.mesh.position.distanceTo(playerObj.position.clone().add(reusableVector.set(0,1,0))) < 1.0) { hit = true; damagePlayer(15); }
+                else {
+                    for(const e of entities) { if(e.faction === 'ally' && !e.dead && p.mesh.position.distanceTo(e.mesh.position.clone().add(reusableVector.set(0,1,0))) < 2.0) { hit = true; e.takeDamage(60, false); break;} }
+                }
+            }
+            if(hit) { p.active = false; p.mesh.visible = false; particleSystem.emit({ pos: p.mesh.position, vel: reusableVector.set(0,0,0), count: 10, life: 0.5, size: 0.8, color: p.mesh.material.emissive, spread: 5 }); }
+        }
+    });
+
+    for(let i=entities.length-1; i>=0; i--) {
+        const ent = entities[i];
+        if(ent.dead) { entities.splice(i, 1); continue; }
+        if(ent.kneeling || ent.stunTimer > 0) { if(ent.stunTimer > 0) ent.stunTimer -= dt*1000; continue; }
+
+        let target = playerObj.position; let targetEnt = null;
+        if(ent.faction === 'enemy') {
+            let closest = 999; let allyTarget = null;
+            entities.forEach(e => { if(e.faction === 'ally' && ent.mesh.position.distanceTo(e.mesh.position) < closest) { closest = ent.mesh.position.distanceTo(e.mesh.position); allyTarget = e; } });
+            if(allyTarget) { target = allyTarget.mesh.position; targetEnt = allyTarget; }
+        } else {
+            let closest = 999; let enTarget = null;
+            entities.forEach(e => { if(e.faction === 'enemy' && ent.mesh.position.distanceTo(e.mesh.position) < closest) { closest = ent.mesh.position.distanceTo(e.mesh.position); enTarget = e; } });
+            if(enTarget) { target = enTarget.mesh.position; targetEnt = enTarget; }
+        }
+
+        const dist = ent.mesh.position.distanceTo(target);
+        let stopDist = (ent.name === 'Soldier' || ent.name === 'Elite') ? 30 : 2; // Minions engage from further
+        if(ent.name === 'General Average') stopDist = 12; 
+
+        if(dist > stopDist) {
+            let speed = (ent.name === 'General Average') ? CONFIG.BOSS_SPEED : 9; // Buffed minion speed
+            const move = reusableVector.subVectors(target, ent.mesh.position).normalize(); move.y = 0;
+            ent.mesh.position.add(move.multiplyScalar(speed * dt));
+            ent.mesh.lookAt(target.x, ent.mesh.position.y, target.z);
+        } else {
+            ent.mesh.lookAt(target.x, ent.mesh.position.y, target.z);
+             if(ent.name === 'Soldier' || ent.name === 'Elite') {
+                ent.attackTimer = (ent.attackTimer || 0) - dt * 1000;
+                // Minion Buff: Fire much faster (800ms vs 2000ms)
+                if(ent.attackTimer <= 0 && dist < 100) { npcShoot(ent, target); ent.attackTimer = 450; }
+            } else if (dist < 5){
+                let dmg = (ent.name === 'General Average') ? CONFIG.BOSS_DMG : 55; // Buffed melee dmg
+                if(ent.faction === 'enemy') { if(targetEnt) targetEnt.takeDamage(dmg * dt * 5, false); else if(dist < 5) damagePlayer(dmg * dt * 3); } 
+                else { if(targetEnt) targetEnt.takeDamage(dmg * dt * 5, false); }
+            }
+        }
+    }
+    composer.render(dt);
+    if(cameraShake.time > 0) {
+        camera.position.x = originalCameraX;
+        camera.position.y = originalCameraY;
+    }
+}
+
+function createChimpMesh(isBoss) {
+    const group = new THREE.Group(); group.userData.animType='chimp'; const scale=isBoss?2.5:1.0; group.scale.set(scale,scale,scale);
+    const t=new THREE.Mesh(GEOS.cyl,MATS.bossFur); t.scale.set(0.55, 1.4, 0.55); t.position.y=0.9; group.add(t); 
+    const hd=new THREE.Mesh(GEOS.sphere,MATS.bossSkin); hd.scale.set(0.35,0.35,0.35); hd.position.set(0,1.4,0.7); group.add(hd); 
+    const eye=new THREE.Mesh(new THREE.SphereGeometry(0.05), new THREE.MeshBasicMaterial({color:0xff0000, emissive: 0xff0000})); const le=eye.clone(); le.position.set(-0.12,1.45,1.0); group.add(le); const re=eye.clone(); re.position.set(0.12,1.45,1.0); group.add(re); 
+    
+    // Arms for animation
+    const armGeo=new THREE.BoxGeometry(0.15,1.5,0.15);
+    
+    const laGroup = new THREE.Group(); laGroup.position.set(-0.65,1.3,0.4); laGroup.name = 'leftArm';
+    const la=new THREE.Mesh(armGeo, MATS.bossFur); la.position.y = -0.75; 
+    laGroup.add(la); group.add(laGroup);
+    
+    const raGroup = new THREE.Group(); raGroup.position.set(0.65,1.3,0.4); raGroup.name = 'rightArm';
+    const ra=new THREE.Mesh(armGeo, MATS.bossFur); ra.position.y = -0.75; 
+    raGroup.add(ra); group.add(raGroup);
+    
+    const leg=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.7,0.22), MATS.bossFur); const ll=leg.clone(); ll.position.set(-0.25,0.35,0); group.add(ll); const rl=leg.clone(); rl.position.set(0.25,0.35,0); group.add(rl); 
+    return group;
+}
+
+function createHumanoidMesh(mat,isBeast) {
+    const g=new THREE.Group();
+    const b=new THREE.Mesh(isBeast?GEOS.cyl:GEOS.box,mat); if(isBeast) b.scale.set(0.5,1.2,0.5); else b.scale.set(0.6,1.0,0.3); b.position.y=1.0; g.add(b); 
+    const h=new THREE.Mesh(GEOS.sphere,mat); h.scale.set(0.3,0.3,0.3); h.position.y=1.7; g.add(h); 
+    const arm=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.8,0.15), mat); const la=arm.clone(); la.position.set(-0.45,1.1,0); g.add(la); const ra=arm.clone(); ra.position.set(0.45,1.1,0); g.add(ra); 
+    const leg=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.9,0.18), mat); const ll=leg.clone(); ll.position.set(-0.2,0.45,0); g.add(ll); const rl=leg.clone(); rl.position.set(0.2,0.45,0); g.add(rl); 
+    return g;
+}
+
+function updateBossUI() { 
+    if(!boss) return; 
+    
+    // Calculate percentages and Clamp to 100% max
+    const hpPct = Math.min(100, (boss.hp / boss.maxHp) * 100); 
+    // If shield is huge, cap it visually at 100%
+    const shPct = Math.min(100, (boss.shield / boss.maxHp) * 100); 
+    const wrathPct = Math.min(100, boss.wrath);
+
+    document.getElementById('boss-hp-fill').style.width = hpPct + '%'; 
+    document.getElementById('boss-shield-fill').style.width = shPct + '%'; 
+    document.getElementById('boss-wrath-fill').style.width = wrathPct + '%'; 
+    
+}
+function updatePlayerUI() { 
+    // Clamp Player HP and Shield to 100% visual width
+    const hpPct = Math.min(100, (playerStats.hp / 100) * 100);
+    
+    // Assuming 100 Shield is a "full bar" visually, or match maxHp. 
+    // Currently logic caps it at 100% width regardless of how high the number is.
+
+    const shPct = Math.min(100, (playerStats.shield/ 10000) * 100); 
+
+    document.getElementById('p-hp-fill').style.width = hpPct + '%'; 
+    document.getElementById('p-shield-fill').style.width = shPct + '%'; 
+    document.getElementById('ammo-val').innerText = playerStats.rifleAmmo; 
+}function triggerCooldownUI(key) { const el = document.getElementById('cd-'+key); el.style.height = '100%'; document.getElementById('ab-'+key).classList.remove('ready'); }
+function updateCooldownUI(key, current, max) { const el = document.getElementById('cd-'+key); const pct = (current / max) * 100; el.style.height = pct + '%'; if(pct <= 0) document.getElementById('ab-'+key).classList.add('ready'); }
+function showBanner(id, time, text=null) { const el = document.getElementById(id); if(text) el.innerText = text; el.classList.add('active'); setTimeout(() => el.classList.remove('active'), time); }
+
+init();
+</script>
+</body>
+</html>
